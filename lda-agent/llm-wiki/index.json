@@ -1,0 +1,5 @@
+{
+  "$schema_note": "机器索引：AI 检索与冲突检测入口。每个条目字段：path/title/type/keywords/status/updated/incomplete。status ∈ [active, deprecated]。",
+  "version": 1,
+  "entries": []
+}
