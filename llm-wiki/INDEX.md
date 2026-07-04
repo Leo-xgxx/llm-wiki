@@ -1,7 +1,7 @@
 # LLM Wiki 总索引
 
 > 本文件为人类可读索引；机器检索请使用 [`index.json`](index.json)。
-> 任何条目新增/更新/废弃，必须同步维护本文件与 index.json（见 [`../SKILL.md`](../SKILL.md) Step 6）。
+> 任何条目新增/更新/废弃，必须同步维护本文件与 index.json（见 [`../skills/llm-wiki-knowledge-add/SKILL.md`](../skills/llm-wiki-knowledge-add/SKILL.md) Step 6）。
 
 ## datasets（数据集）
 

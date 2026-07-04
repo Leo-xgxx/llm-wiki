@@ -3,19 +3,27 @@ name: llm-wiki-knowledge-add
 description: >
   当用户提交新知识、纠错、或发消息要求"记录/添加/更新"某条知识时，
   使用本 skill 将知识规范化写入 llm-wiki，包括：知识分类、冲突检测、
-  依赖信息补全（数据集ID/上游表等）、条目写入、索引维护、自检。
+  依赖信息补全（数据集ID/上游表等）、条目写入、索引维护、脚本校验、自检。
 keywords: ["新增知识", "添加知识", "更新wiki", "记录", "knowledge add", "wiki update"]
 ---
 
 # Skill：向 llm-wiki 新增/更新知识
 
 > 触发条件：用户提交新内容，或消息中包含"记录一下 / 加到 wiki / 这个知识要更新 / 之前的说法不对"等意图。
-> 目标：任何一次知识写入都必须**同时**完成：条目文件 + 两个索引 + 冲突处理。缺一不可。
+> 目标：任何一次知识写入都必须**同时**完成：条目文件 + 两个索引 + 冲突处理，并通过脚本校验。缺一不可。
+>
+> 本 skill 附带资源：
+> - `scripts/check_conflicts.py`：写入前按关键词检索潜在冲突条目
+> - `scripts/validate_wiki.py`：写入后校验条目格式、索引一致性，防止漏写/错写
+> - `references/entry-format.md`：条目 frontmatter 与正文小节的完整格式规范
+> - `references/conflict-handling.md`：冲突场景判定与处理示例
+>
+> wiki 根目录为仓库一级目录 `llm-wiki/`。
 
 ## 总流程（必须按顺序执行）
 
 ```
-1. 解析意图 → 2. 分类 → 3. 冲突检测 → 4. 依赖信息补全 → 5. 写入条目 → 6. 维护索引 → 7. 自检清单
+1. 解析意图 → 2. 分类 → 3. 冲突检测(脚本) → 4. 依赖信息补全 → 5. 写入条目 → 6. 维护索引 → 7. 脚本校验 + 自检
 ```
 
 ---
@@ -46,8 +54,14 @@ keywords: ["新增知识", "添加知识", "更新wiki", "记录", "knowledge ad
 
 ## Step 3：冲突知识检测（写入前必做）
 
-1. 读取 `llm-wiki/index.json`，用新知识的 title 和 keywords 做匹配（含同义词、中英文互译）。
-2. 对命中的每个条目，打开对应文件比对内容：
+1. 运行冲突检索脚本：
+
+   ```bash
+   python3 skills/llm-wiki-knowledge-add/scripts/check_conflicts.py "关键词1" "关键词2" ...
+   ```
+
+   脚本会在 `llm-wiki/index.json` 中按 title/keywords 匹配并列出候选冲突条目。AI 还应额外考虑同义词、中英文互译后再检索一次。
+2. 对命中的每个条目，打开对应文件比对内容（详细判定见 `references/conflict-handling.md`）：
    - **无冲突（纯新增）**：继续 Step 4。
    - **补充**：新知识是既有条目的扩展 → 更新既有条目，不新建文件。
    - **矛盾**：新知识与既有条目结论相反 →
@@ -73,9 +87,9 @@ dataset 类知识写入前，需通过内部工具补全以下字段。**当前�
 
 ## Step 5：写入条目
 
-1. 从 `llm-wiki/_templates/` 选择对应类型的模板复制。
+1. 从 `llm-wiki/_templates/` 选择对应类型的模板复制；格式规范详见 `references/entry-format.md`。
 2. 文件命名：`<类型目录>/<kebab-case-英文或拼音主题名>.md`，禁止空格与中文文件名。
-3. 填写 frontmatter（title / keywords / status / created / updated / source）和正文全部小节；模板中不适用的小节写 `N/A`，不得直接删除。
+3. 填写 frontmatter（title / type / keywords / status / created / updated / source）和正文全部小节；模板中不适用的小节写 `N/A`，不得直接删除。
 4. 首次创建时 `变更记录` 写一行"初始创建"。
 
 ## Step 6：维护索引（每次写入/更新/废弃后必做，不得遗漏）
@@ -89,12 +103,23 @@ dataset 类知识写入前，需通过内部工具补全以下字段。**当前�
    - 在对应类型小节的表格中新增/更新一行（标题、链接、关键词、更新时间）；
    - 废弃条目移入"已废弃"小节。
 
-## Step 7：自检清单（全部为 ✅ 才算完成）
+## Step 7：脚本校验 + 自检清单
+
+写入完成后**必须**运行校验脚本，退出码为 0 才算通过：
+
+```bash
+python3 skills/llm-wiki-knowledge-add/scripts/validate_wiki.py
+```
+
+脚本会检查：index.json 合法性与字段完整性、索引条目与实际文件一一对应（防漏写索引/漏建文件）、条目 frontmatter 必填字段、INDEX.md 是否包含所有 active 条目。**任何报错必须修复后重跑，直至通过。**
+
+最后核对自检清单（全部为 ✅ 才算完成）：
 
 - [ ] 条目文件已创建/更新，frontmatter 完整
-- [ ] 已对 index.json 做过冲突检索，冲突已按 Step 3 处理
+- [ ] 已运行 `check_conflicts.py` 检索冲突，冲突已按 Step 3 处理
 - [ ] dataset 类条目已补全（或标记 TODO）数据集 ID、上游表等依赖信息
 - [ ] `index.json` 已更新且为合法 JSON
 - [ ] `INDEX.md` 已更新
 - [ ] 变更记录小节已写明本次变更
 - [ ] 未产生重复条目、未物理删除历史条目
+- [ ] `validate_wiki.py` 已通过（退出码 0）
