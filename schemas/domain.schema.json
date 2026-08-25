@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/llm-wiki/domain.schema.json",
+  "title": "Domain descriptor",
+  "description": "domain.yaml at a domain root. Declares the domain's identity, registry, handbook and the files the build must consult.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "title", "description", "status", "source_registry", "handbook", "routing_hints"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
+    "title": {"type": "string", "minLength": 1},
+    "description": {"type": "string", "minLength": 1},
+    "status": {"enum": ["incubating", "active", "frozen", "retired"]},
+    "owner_role": {"type": "string", "minLength": 1, "description": "A role name, never a person."},
+    "source_registry": {"type": "string", "minLength": 1},
+    "handbook": {"type": "string", "minLength": 1, "description": "First-read rules for this domain. Read before any card."},
+    "retirements": {"type": "string", "minLength": 1},
+    "redirects": {"type": "string", "minLength": 1},
+    "changelog_dir": {"type": "string", "minLength": 1},
+    "routing_hints": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1, "uniqueItems": true},
+    "boundaries": {
+      "type": "array",
+      "items": {"type": "object", "additionalProperties": false, "required": ["topic", "owner_domain"], "properties": {
+        "topic": {"type": "string", "minLength": 1},
+        "owner_domain": {"type": "string", "minLength": 1},
+        "note": {"type": "string"}
+      }},
+      "description": "Topics that sound like this domain but belong elsewhere. Routing reads these before scoring."
+    }
+  }
+}

@@ -9,8 +9,10 @@ knowledge_role: interface
 maintainer: demo-maintainer
 aliases:
   - demo daily orders
+  - orders_daily
 canonical_cards:
   - acme-analytics.metric.net-revenue
+  - acme-analytics.metric.gross-revenue
 scope:
   grain: one row per order
   time_semantics: partitioned by order recognition date
@@ -30,12 +32,14 @@ query_interface:
     - product_category
     - region
   availability: synthetic example only
+  refresh: daily, previous day complete by early morning
 source_refs:
   - acme-analytics.synthetic.orders-v1
   - acme-analytics.synthetic.orders-interface-v1
 relations:
   depends_on: []
-  related: []
+  related:
+    - acme-analytics.dimension.order-status
   supersedes: []
 evidence:
   - kind: interface-contract
@@ -61,7 +65,7 @@ The logical contract exposes recognition date, order and refund status, gross an
 
 ## Boundaries
 
-The dataset card owns only interface location, row grain, logical fields, and availability. The daily aggregation and completed-status filters belong to `acme-analytics.metric.net-revenue`; this intentional grain difference does not transfer semantic ownership to the interface.
+The dataset card owns only interface location, row grain, logical fields, and availability. The daily aggregation and completed-status filters belong to the canonical metric cards; this intentional grain difference does not transfer semantic ownership to the interface.
 
 ## Examples
 

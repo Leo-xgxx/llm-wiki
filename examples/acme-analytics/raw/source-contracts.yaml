@@ -1,9 +1,14 @@
-version: 1
-notice: Synthetic contracts only; no rows, physical locations, queries, credentials, or real asset identifiers.
+version: 2
+notice: Synthetic contracts only; no rows, physical locations, queries, credentials, or real asset identifiers. Every contract id is referenced from at least one card.
 contracts:
   - id: acme-analytics.synthetic.orders-v1
     kind: interface-contract
     summary: Fictional logical order interface used to review the example cards.
+    provenance:
+      origin: fictional interface specification for the demo adapter
+      captured_on: "2026-08-25"
+      state_at_capture: live
+      trust: authoritative
     grain: one row per order
     time_field: recognition_date
     logical_fields:
@@ -15,13 +20,42 @@ contracts:
       - product_category
       - region
     status_values:
-      - completed
-      - pending
-      - none
+      order_status: [completed, pending, cancelled]
+      refund_status: [completed, pending, none]
     amount_unit: demo currency
+  - id: acme-analytics.synthetic.commerce-overview-v1
+    kind: interface-contract
+    summary: Fictional dashboard definition; one revenue trend chart with a region selector that excludes the sample region.
+    provenance:
+      origin: fictional dashboard definition export
+      captured_on: "2026-08-25"
+      state_at_capture: live
+      trust: authoritative
+  - id: acme-analytics.synthetic.pricing-memo-snapshot-v1
+    kind: document-snapshot
+    summary: Fictional pricing policy memo stating that refunds reduce revenue once completed and that unqualified revenue means the net figure.
+    provenance:
+      origin: fictional policy memo, captured as a managed snapshot under raw/
+      captured_on: "2026-08-25"
+      state_at_capture: published
+      trust: authoritative
+  - id: acme-analytics.synthetic.refund-timing-observation-v1
+    kind: observed-output
+    summary: A dated review observed that queries subtracting pending refunds dip and then stay low; recorded as a pattern, without figures.
+    provenance:
+      origin: fictional reviewer note from a card review session
+      captured_on: "2026-08-20"
+      state_at_capture: live
+      trust: authoritative
   - id: acme-analytics.synthetic.net-revenue-v1
     kind: semantic-decision
     summary: Daily net revenue is completed-order gross amount minus completed refunds, grouped by recognition date; pending states are excluded.
+  - id: acme-analytics.synthetic.gross-revenue-v1
+    kind: semantic-decision
+    summary: Gross revenue is completed-order gross amount by recognition date with no refund adjustment; it is the reconciliation reference.
   - id: acme-analytics.synthetic.orders-interface-v1
     kind: semantic-decision
     summary: The dataset card owns interface location, row grain, logical fields, and availability, while canonical metric cards own formulas and filters.
+  - id: acme-analytics.synthetic.revenue-term-ruling-v1
+    kind: semantic-decision
+    summary: The bare term revenue routes to net revenue with a refund disclosure; gross, before refunds and order value route to gross revenue.

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/llm-wiki/tombstone.schema.json",
+  "title": "Retirement tombstone",
+  "description": "One line of a domain's retirements.jsonl. Appended before a card file is physically deleted and never removed afterwards.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "outcome", "reason", "retired_on", "final_sha256"],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "outcome": {"enum": ["replaced", "merged", "retired"]},
+    "target_card": {"type": "string", "minLength": 1},
+    "reason": {"type": "string", "minLength": 1},
+    "retired_on": {"type": "string", "format": "date"},
+    "final_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "deleted_on": {"type": "string", "format": "date", "description": "Date the file left the tree. Absent while the deprecated card file still exists."}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"outcome": {"enum": ["replaced", "merged"]}}, "required": ["outcome"]},
+      "then": {"required": ["target_card"]}
+    },
+    {
+      "if": {"properties": {"outcome": {"const": "retired"}}, "required": ["outcome"]},
+      "then": {"not": {"required": ["target_card"]}}
+    }
+  ]
+}

@@ -4,38 +4,86 @@
 
 Treat retrieval as three contracts:
 
-1. **Route** identifies the subject, domain, and requested action.
-2. **Resolve** ranks canonical cards and expands only relevant typed neighbors.
+1. **Route** identifies the subject, domain, and requested action. The domain handbook and its boundaries are read first; a topic listed under boundaries is routed to its owning domain before any scoring.
+2. **Resolve** ranks canonical cards and expands only relevant typed neighbours (one hop of `depends_on`, the arbitration parties of a consistency card, the interfaces bridging to a metric).
 3. **Plan** decides whether the selected knowledge supports explanation only or an executable action.
 
-A high text-similarity score is not proof that a card owns the answer.
+A high text-similarity score is not proof that a card owns the answer. A consistency card that holds the bare term is the correct top result for an unqualified question even when a metric scores higher on words.
 
-## Ranking safety
+## Three compiled layers
 
-Every important route should include:
+Every active card compiles to exactly one layer. The layer decides how much context the runtime loads:
+
+| Layer | Meaning | Default context |
+|---|---|---|
+| `direct` | a metric with an execution contract and at least one bridging interface whose adapter is live | compact execution metadata; the full card is not read |
+| `guided` | an interface exists or a procedure is declared, but execution is not safe without reading the card | the full card |
+| `knowledge` | definition, value domain, ruling, trap, concept or evidence; nothing to execute | the full card |
+
+The layer is derived by the build, never hand-set. It must not be improved by adding guessed interfaces, guessed join keys, or lowered evidence requirements; a domain with few `direct` cards is an honest domain.
+
+## Capsules and the handbook
+
+For navigation the runtime reads a **domain capsule**: the handbook plus the briefs of that domain's cards. A capsule is small enough to read whole. It answers "which card, if any" cheaply before the full card is loaded.
+
+The handbook is read before the capsule's cards and overrides them. Hard rules that must hold for every answer in a domain belong there.
+
+## Fallback ladder
+
+When the first route does not produce a confident candidate, the runtime descends a fixed ladder and records which rung answered:
+
+1. handbook boundary override (the topic is explicitly assigned elsewhere);
+2. term rewrite through aliases and the redirect table;
+3. asset index ("where do I look" questions match interface cards by name);
+4. full-text retrieval over briefs at the runtime cutoff;
+5. domain capsule read;
+6. whole-repository lookup as the last resort.
+
+Rung 6 is a diagnostic surface. An answer that needed it is a routing gap and produces a gap record even when the answer was right.
+
+## Ranking is a shared budget
+
+Every scored surface (title, aliases, summary, brief) competes with every other card's surfaces for the same top positions. Rules that follow:
+
+- **Aliases are concrete noun surfaces.** Question phrasing, generic verbs and time words inside an alias match unrelated questions; a single bad alias can push another domain's expected card below the cutoff.
+- **The brief stays inside its limit and inside its domain.** Examples, enumerations and other domains' product names are placed in non-scored sections.
+- **Rare terms are the lever, not length.** A short brief containing one rare cross-word fragment pulls harder than a long plain one. When a change displaces a neighbour, find the two or three rare terms that overlap the neighbour's question and rephrase them; do not shorten blindly.
+- **Reproduce at the runtime cutoff.** A ranking miss reproduced with a tool's default cutoff shows a different picture from the one the runtime sees.
+- **Shared surfaces need an arbiter.** Two active cards holding the same alias is a build error, full stop. The resolution is a consistency card that holds the alias, lists both cards as parties, and rules which one answers the bare term.
+
+## Ranking safety records
+
+Every important route has a record in `evals/routing.jsonl`:
 
 - a positive query that should retrieve the canonical card;
 - paraphrases that exercise different wording;
-- a near-neighbor negative query using similar terms but a different subject;
-- a rank contract such as canonical top-1 or expected top-k;
-- an execution expectation when a query interface is required.
+- a near-neighbour negative query using similar terms but a different subject;
+- a rank contract (`max_rank`) and the runtime `cutoff`;
+- an execution expectation: `knowledge-only`, `interface-locate`, `executable-if-available` (which names `required_interfaces`), or `ask-back` for questions that must not be answered without clarification.
 
-An evaluation record should make that expectation explicit. Useful generic modes are `knowledge-only`, `interface-locate`, and `executable-if-available`; the last mode also names the required interface cards. Runtime availability is still checked live rather than inferred from retrieval success.
+A negative passes only when none of the positive `expected_cards` appears inside the cutoff. Records carry `layer` (`stable` or `volatile`) and `status` (`active`, `quarantine`, `deprecated`) so that a record depending on moving data can be quarantined without blocking a release.
 
-The minimal record contains `id`, `question`, `paraphrases`, `expected_cards`, `max_rank`, `execution_expectation`, and `negative_queries`. `required_interfaces` is mandatory for `executable-if-available`. A negative passes only when none of the positive `expected_cards` appears inside the configured retrieval cutoff; the evaluator records that cutoff alongside its result.
+## Rank regression and runtime impact
 
-Evaluate base and candidate versions side by side. A content edit can be semantically correct while still pushing the canonical card below the runtime cutoff.
+Evaluate base and candidate side by side, and look at more than pass/fail:
+
+- rank and score margin of every expected card, before and after;
+- compiled layer of every card, before and after;
+- the set of cards that entered or left the cutoff for every eval question.
+
+"All green" proves the assertions in the eval file; it does not prove that a card did not move from rank 3 to rank 7, or that an interface card did not silently become `direct` and start receiving execution traffic. Those are gate findings in their own right.
 
 ## Separate gates
 
 | Gate | Question |
 |---|---|
 | Schema | Is every card structurally valid? |
-| Graph | Are IDs unique and typed links resolvable? |
+| Graph | Are ids unique and typed links resolvable? Are shared aliases arbitrated? |
 | Build | Are generated artifacts deterministic and complete? |
-| Retrieval | Do positive, paraphrase, and negative queries rank correctly? |
+| Retrieval | Do positive, paraphrase, and negative queries rank correctly at the runtime cutoff? |
+| Rank regression | Did any expected card lose rank or margin? Did any card change layer? |
 | Planning | Is execution readiness reported accurately? |
-| Answer | Does the final response use the right definition and caveat? |
+| Answer | Does the final response use the right definition, disclosure and refusal? (see [golden-questions.md](golden-questions.md)) |
 | Freshness | Is the evidence still within its review window? |
 
 Do not collapse these into one pass/fail signal.

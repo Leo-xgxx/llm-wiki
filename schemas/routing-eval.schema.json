@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/llm-wiki/routing-eval.schema.json",
+  "title": "Routing evaluation record",
+  "description": "One line of evals/routing.jsonl. Checks that retrieval ranks the right cards and reports execution readiness honestly. It does not judge the final answer; see golden-question.schema.json.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "question", "paraphrases", "expected_cards", "max_rank", "execution_expectation", "negative_queries"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
+    "question": {"type": "string", "minLength": 1},
+    "paraphrases": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "expected_cards": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1, "uniqueItems": true},
+    "max_rank": {"type": "integer", "minimum": 1},
+    "execution_expectation": {"enum": ["knowledge-only", "interface-locate", "executable-if-available", "ask-back"]},
+    "required_interfaces": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1, "uniqueItems": true},
+    "negative_queries": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "cutoff": {"type": "integer", "minimum": 1, "description": "Retrieval cutoff the runtime actually uses. Reproduce ranking failures at this cutoff, never at a tool default."},
+    "layer": {"enum": ["stable", "volatile"], "description": "volatile records depend on live data or a moving report and may be quarantined without blocking a release."},
+    "status": {"enum": ["active", "quarantine", "deprecated"]}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"execution_expectation": {"const": "executable-if-available"}}, "required": ["execution_expectation"]},
+      "then": {"required": ["required_interfaces"]}
+    }
+  ]
+}

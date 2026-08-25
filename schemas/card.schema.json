@@ -1,7 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.invalid/lda-llm-wiki/card.schema.json",
+  "$id": "https://example.invalid/llm-wiki/card.schema.json",
   "title": "Generic LLM Wiki card",
+  "description": "Frontmatter contract for every card. Type-specific blocks are enforced by the allOf conditionals; cross-record rules (reference existence, alias arbitration, manifest hashes) live in tools/validate.py.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -12,7 +13,6 @@
     "summary",
     "status",
     "knowledge_role",
-    "scope",
     "relations",
     "evidence",
     "freshness"
@@ -20,43 +20,52 @@
   "properties": {
     "id": {
       "type": "string",
-      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+      "pattern": "^[a-z0-9][a-z0-9-]*\\.(metric|dataset|dimension|concept|playbook|trap|consistency|dashboard|source)\\.[a-z0-9][a-z0-9-]*$"
     },
     "type": {
-      "enum": ["metric", "dataset"]
+      "enum": ["metric", "dataset", "dimension", "concept", "playbook", "trap", "consistency", "dashboard", "source"]
     },
     "domain": {
       "type": "string",
       "pattern": "^[a-z0-9][a-z0-9-]*$"
     },
-    "title": {
-      "type": "string",
-      "minLength": 1
-    },
-    "summary": {
-      "type": "string",
-      "minLength": 1
-    },
+    "title": {"type": "string", "minLength": 1},
+    "summary": {"type": "string", "minLength": 1, "maxLength": 300},
     "status": {
       "enum": ["draft", "review", "needs-decision", "certified", "deprecated", "stale"]
     },
-    "knowledge_role": {
-      "enum": ["canonical", "interface"]
-    },
-    "maintainer": {
+    "status_note": {
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "description": "Why the card is in its current status, or who approved certification. Never a model name or a person's contact."
     },
+    "knowledge_role": {
+      "enum": ["canonical", "interface", "evidence"]
+    },
+    "importance": {
+      "enum": ["north-star", "secondary", "general"],
+      "description": "Only a routing and review-priority signal. It never changes answer policy."
+    },
+    "confidence": {"enum": ["high", "medium", "low"]},
+    "maintainer": {"type": "string", "minLength": 1},
     "aliases": {
       "type": "array",
-      "items": {"type": "string", "minLength": 1},
-      "uniqueItems": true
+      "items": {"type": "string", "minLength": 1, "pattern": "^[^?？]*$"},
+      "uniqueItems": true,
+      "description": "Concrete noun surfaces only: field names, report names, product terms. Never question phrasing."
     },
     "canonical_cards": {
       "type": "array",
       "items": {"type": "string", "minLength": 1},
       "minItems": 1,
       "uniqueItems": true
+    },
+    "index_to": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "Source cards only: the canonical cards this evidence snapshot supports."
     },
     "scope": {
       "type": "object",
@@ -65,16 +74,8 @@
       "properties": {
         "grain": {"type": "string", "minLength": 1},
         "time_semantics": {"type": "string", "minLength": 1},
-        "dimensions": {
-          "type": "array",
-          "items": {"type": "string", "minLength": 1},
-          "uniqueItems": true
-        },
-        "filters": {
-          "type": "array",
-          "items": {"type": "string", "minLength": 1},
-          "uniqueItems": true
-        }
+        "dimensions": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "filters": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
       }
     },
     "definition": {
@@ -86,6 +87,67 @@
         "unit": {"type": "string", "minLength": 1}
       }
     },
+    "value_domain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_ref", "open", "values"],
+      "properties": {
+        "source_ref": {"type": "string", "minLength": 1, "description": "Registry contract that lists the values. Hand-typed enumerations without a source are not allowed."},
+        "captured_on": {"type": "string", "format": "date"},
+        "open": {"type": "boolean", "description": "true when new values may appear without notice; consumers must not assume the list is exhaustive."},
+        "values": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["value", "meaning"],
+            "properties": {
+              "value": {"type": "string", "minLength": 1},
+              "meaning": {"type": "string", "minLength": 1},
+              "deprecated": {"type": "boolean"}
+            }
+          }
+        }
+      }
+    },
+    "trap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "severity", "symptom", "detection"],
+      "properties": {
+        "kind": {"enum": ["production-bug", "display", "definition", "data-quality", "access"]},
+        "severity": {"enum": ["high", "medium", "low"]},
+        "symptom": {"type": "string", "minLength": 1},
+        "detection": {"type": "string", "minLength": 1, "description": "A check a reader or agent can run to tell whether the trap applies."},
+        "workaround": {"type": "string", "minLength": 1},
+        "fixed": {"type": "boolean"}
+      }
+    },
+    "arbitration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["term", "parties", "ruling", "ruled_by", "ruled_on"],
+      "properties": {
+        "term": {"type": "string", "minLength": 1, "description": "The shared surface (word, alias, field) that the parties compete for."},
+        "parties": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 2, "uniqueItems": true},
+        "default_party": {"type": "string", "minLength": 1, "description": "Card that wins when a question uses the bare term. Omit when the ruling requires asking back."},
+        "ruling": {"type": "string", "minLength": 1},
+        "ruled_by": {"type": "string", "minLength": 1, "description": "Role, not a person: owner, curator, initiator."},
+        "ruled_on": {"type": "string", "format": "date"}
+      }
+    },
+    "procedure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["question_shape", "executable"],
+      "properties": {
+        "question_shape": {"type": "string", "minLength": 1},
+        "executable": {"type": "boolean", "description": "true only when every step can run through a declared interface without guessing keys or filters."},
+        "inputs": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "outputs": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+      }
+    },
     "query_interface": {
       "type": "object",
       "additionalProperties": false,
@@ -93,13 +155,23 @@
       "properties": {
         "adapter": {"type": "string", "minLength": 1},
         "asset_key": {"type": "string", "minLength": 1},
-        "logical_fields": {
-          "type": "array",
-          "items": {"type": "string", "minLength": 1},
-          "minItems": 1,
-          "uniqueItems": true
-        },
-        "availability": {"type": "string", "minLength": 1}
+        "logical_fields": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1, "uniqueItems": true},
+        "availability": {"type": "string", "minLength": 1},
+        "refresh": {"type": "string", "minLength": 1, "description": "Refresh cadence and the lag a reader should expect."}
+      }
+    },
+    "execution_contract": {
+      "$ref": "#/$defs/execution_contract"
+    },
+    "snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["registry_ref", "captured_on", "origin_kind"],
+      "properties": {
+        "registry_ref": {"type": "string", "minLength": 1},
+        "captured_on": {"type": "string", "format": "date"},
+        "origin_kind": {"enum": ["document", "thread", "report-definition", "schema", "second-hand"]},
+        "trust": {"enum": ["authoritative", "second-hand", "low"], "description": "second-hand: already-distilled material; low: AI-organised or explicitly unverified notes."}
       }
     },
     "source_refs": {
@@ -107,9 +179,7 @@
       "items": {"type": "string", "minLength": 1},
       "uniqueItems": true
     },
-    "relations": {
-      "$ref": "#/$defs/relations"
-    },
+    "relations": {"$ref": "#/$defs/relations"},
     "evidence": {
       "type": "array",
       "items": {"$ref": "#/$defs/evidence"}
@@ -135,21 +205,11 @@
       },
       "allOf": [
         {
-          "if": {
-            "properties": {
-              "outcome": {"enum": ["replaced", "merged"]}
-            },
-            "required": ["outcome"]
-          },
+          "if": {"properties": {"outcome": {"enum": ["replaced", "merged"]}}, "required": ["outcome"]},
           "then": {"required": ["target_card"]}
         },
         {
-          "if": {
-            "properties": {
-              "outcome": {"const": "retired"}
-            },
-            "required": ["outcome"]
-          },
+          "if": {"properties": {"outcome": {"const": "retired"}}, "required": ["outcome"]},
           "then": {"not": {"required": ["target_card"]}}
         }
       ]
@@ -157,100 +217,126 @@
   },
   "allOf": [
     {
-      "if": {
-        "properties": {
-          "type": {"const": "metric"}
-        },
-        "required": ["type"]
-      },
+      "if": {"properties": {"type": {"const": "metric"}}, "required": ["type"]},
       "then": {
-        "required": ["definition"],
+        "required": ["definition", "scope", "importance"],
+        "properties": {"knowledge_role": {"const": "canonical"}}
+      }
+    },
+    {
+      "if": {"properties": {"type": {"const": "dataset"}}, "required": ["type"]},
+      "then": {
+        "required": ["scope"],
+        "properties": {"knowledge_role": {"const": "interface"}}
+      }
+    },
+    {
+      "if": {"properties": {"type": {"const": "dashboard"}}, "required": ["type"]},
+      "then": {
+        "properties": {"knowledge_role": {"const": "interface"}}
+      }
+    },
+    {
+      "if": {"properties": {"type": {"const": "dimension"}}, "required": ["type"]},
+      "then": {
+        "required": ["value_domain", "scope"],
+        "properties": {"knowledge_role": {"const": "canonical"}}
+      }
+    },
+    {
+      "if": {"properties": {"type": {"const": "concept"}}, "required": ["type"]},
+      "then": {"properties": {"knowledge_role": {"const": "canonical"}}}
+    },
+    {
+      "if": {"properties": {"type": {"const": "playbook"}}, "required": ["type"]},
+      "then": {
+        "required": ["procedure"],
         "properties": {
-          "knowledge_role": {"const": "canonical"}
+          "knowledge_role": {"const": "canonical"},
+          "relations": {"properties": {"depends_on": {"minItems": 1}}}
         }
       }
     },
     {
-      "if": {
+      "if": {"properties": {"type": {"const": "trap"}}, "required": ["type"]},
+      "then": {
+        "required": ["trap"],
         "properties": {
-          "knowledge_role": {"const": "interface"}
-        },
-        "required": ["knowledge_role"]
-      },
+          "knowledge_role": {"const": "canonical"},
+          "relations": {"properties": {"related": {"minItems": 1}}}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"type": {"const": "consistency"}}, "required": ["type"]},
+      "then": {
+        "required": ["arbitration"],
+        "properties": {"knowledge_role": {"const": "canonical"}}
+      }
+    },
+    {
+      "if": {"properties": {"type": {"const": "source"}}, "required": ["type"]},
+      "then": {
+        "required": ["index_to", "snapshot"],
+        "properties": {"knowledge_role": {"const": "evidence"}}
+      }
+    },
+    {
+      "if": {"properties": {"knowledge_role": {"const": "interface"}}, "required": ["knowledge_role"]},
       "then": {
         "required": ["canonical_cards", "query_interface"],
-        "properties": {
-          "type": {"const": "dataset"}
-        },
-        "not": {"required": ["definition"]}
+        "not": {"anyOf": [{"required": ["definition"]}, {"required": ["index_to"]}, {"required": ["snapshot"]}]}
       }
     },
     {
-      "if": {
-        "properties": {
-          "knowledge_role": {"const": "canonical"}
-        },
-        "required": ["knowledge_role"]
-      },
+      "if": {"properties": {"knowledge_role": {"const": "canonical"}}, "required": ["knowledge_role"]},
       "then": {
-        "not": {
-          "anyOf": [
-            {"required": ["canonical_cards"]},
-            {"required": ["query_interface"]}
-          ]
-        }
+        "not": {"anyOf": [{"required": ["canonical_cards"]}, {"required": ["query_interface"]}, {"required": ["index_to"]}, {"required": ["snapshot"]}]}
       }
     },
     {
-      "if": {
-        "properties": {
-          "status": {"const": "certified"}
-        },
-        "required": ["status"]
-      },
+      "if": {"properties": {"knowledge_role": {"const": "evidence"}}, "required": ["knowledge_role"]},
+      "then": {
+        "not": {"anyOf": [{"required": ["canonical_cards"]}, {"required": ["query_interface"]}, {"required": ["definition"]}, {"required": ["execution_contract"]}]}
+      }
+    },
+    {
+      "if": {"required": ["execution_contract"]},
+      "then": {"properties": {"type": {"enum": ["metric", "dataset", "dashboard"]}}}
+    },
+    {
+      "if": {"required": ["value_domain"]},
+      "then": {"properties": {"type": {"const": "dimension"}}}
+    },
+    {
+      "if": {"required": ["trap"]},
+      "then": {"properties": {"type": {"const": "trap"}}}
+    },
+    {
+      "if": {"required": ["arbitration"]},
+      "then": {"properties": {"type": {"const": "consistency"}}}
+    },
+    {
+      "if": {"required": ["procedure"]},
+      "then": {"properties": {"type": {"const": "playbook"}}}
+    },
+    {
+      "if": {"properties": {"status": {"const": "certified"}}, "required": ["status"]},
       "then": {
         "required": ["maintainer"],
         "properties": {
           "evidence": {
             "minItems": 2,
             "allOf": [
-              {
-                "contains": {
-                  "type": "object",
-                  "properties": {
-                    "kind": {"const": "semantic-decision"}
-                  },
-                  "required": ["kind"]
-                }
-              },
-              {
-                "contains": {
-                  "type": "object",
-                  "properties": {
-                    "kind": {
-                      "enum": [
-                        "schema-contract",
-                        "interface-contract",
-                        "implementation-expression",
-                        "observed-output"
-                      ]
-                    }
-                  },
-                  "required": ["kind"]
-                }
-              }
+              {"contains": {"type": "object", "properties": {"kind": {"const": "semantic-decision"}}, "required": ["kind"]}},
+              {"contains": {"type": "object", "properties": {"kind": {"enum": ["schema-contract", "interface-contract", "implementation-expression", "observed-output", "document-snapshot"]}}, "required": ["kind"]}}
             ]
           }
         }
       }
     },
     {
-      "if": {
-        "properties": {
-          "status": {"const": "deprecated"}
-        },
-        "required": ["status"]
-      },
+      "if": {"properties": {"status": {"const": "deprecated"}}, "required": ["status"]},
       "then": {"required": ["retirement"]},
       "else": {"not": {"required": ["retirement"]}}
     }
@@ -261,21 +347,9 @@
       "additionalProperties": false,
       "required": ["depends_on", "related", "supersedes"],
       "properties": {
-        "depends_on": {
-          "type": "array",
-          "items": {"type": "string", "minLength": 1},
-          "uniqueItems": true
-        },
-        "related": {
-          "type": "array",
-          "items": {"type": "string", "minLength": 1},
-          "uniqueItems": true
-        },
-        "supersedes": {
-          "type": "array",
-          "items": {"type": "string", "minLength": 1},
-          "uniqueItems": true
-        }
+        "depends_on": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "related": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "supersedes": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
       }
     },
     "evidence": {
@@ -284,16 +358,58 @@
       "required": ["kind", "ref", "checked_at"],
       "properties": {
         "kind": {
-          "enum": [
-            "schema-contract",
-            "interface-contract",
-            "implementation-expression",
-            "observed-output",
-            "semantic-decision"
-          ]
+          "enum": ["schema-contract", "interface-contract", "implementation-expression", "observed-output", "document-snapshot", "semantic-decision"]
         },
         "ref": {"type": "string", "minLength": 1},
-        "checked_at": {"type": "string", "format": "date"}
+        "checked_at": {"type": "string", "format": "date"},
+        "note": {"type": "string", "minLength": 1}
+      }
+    },
+    "filter_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field", "op", "value", "reason"],
+      "properties": {
+        "field": {"type": "string", "minLength": 1},
+        "op": {"enum": ["eq", "neq", "in", "not_in", "is_null", "not_null", "gte", "lte"]},
+        "value": {"type": ["string", "number", "boolean", "array", "null"]},
+        "reason": {"type": "string", "minLength": 1}
+      }
+    },
+    "execution_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Machine-executed constraints. When prose and contract disagree, the contract wins; that is why editing the contract is part of every definition change.",
+      "properties": {
+        "always_filter": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/filter_item"},
+          "description": "Filters that apply to every execution of this card. Keep view-specific framing out of here; use by_layer."
+        },
+        "by_layer": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["layer"],
+            "properties": {
+              "layer": {"type": "string", "minLength": 1, "description": "A named view, report tab, or consumer that frames the data differently from the canonical definition."},
+              "metrics": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+              "require_filter": {"type": "array", "items": {"$ref": "#/$defs/filter_item"}},
+              "forbid_filter": {"type": "array", "items": {"$ref": "#/$defs/filter_item"}}
+            }
+          }
+        },
+        "time_default": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["window", "grain"],
+          "properties": {
+            "window": {"type": "string", "minLength": 1},
+            "grain": {"type": "string", "minLength": 1},
+            "timezone": {"type": "string", "minLength": 1}
+          }
+        }
       }
     }
   }

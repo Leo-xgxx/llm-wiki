@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/llm-wiki/redirects.schema.json",
+  "title": "ID redirects",
+  "description": "redirects.json in a domain. Maps retired or renamed card ids to their current home so that old links, evals and gap records keep resolving.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "redirects"],
+  "properties": {
+    "version": {"type": "integer", "minimum": 1},
+    "redirects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["from", "to", "since"],
+        "properties": {
+          "from": {"type": "string", "minLength": 1},
+          "to": {"type": "string", "minLength": 1},
+          "since": {"type": "string", "format": "date"},
+          "reason": {"type": "string"}
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/llm-wiki/golden-question.schema.json",
+  "title": "Golden question record",
+  "description": "One line of evals/golden.jsonl. End-to-end answer expectation with explicit ground-truth provenance and scoring method.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "question", "category", "question_style", "answer_type", "ground_truth_type", "scoring_method", "source_type", "expected", "expected_cards", "status", "layer"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
+    "question": {"type": "string", "minLength": 1},
+    "category": {
+      "enum": ["definition", "source", "arbitration", "disambiguation", "refusal", "known_bug", "boundary", "diagnostic", "cross_metric"],
+      "description": "refusal and boundary questions exist so that 'I do not know' is scored as a correct answer when it is the correct answer."
+    },
+    "question_style": {"enum": ["naive_real", "analyst_precise", "adversarial_leading", "owner_check"]},
+    "answer_type": {"enum": ["numeric", "list", "definition", "source", "refusal", "arbitration", "explanation"]},
+    "ground_truth_type": {
+      "enum": ["measured_live", "snapshot_verified", "curator_arbitrated", "owner_arbitrated", "known_bug", "absence_boundary"],
+      "description": "Where the expected answer comes from. measured_live truths expire; arbitrated truths are decisions, not measurements."
+    },
+    "scoring_method": {"enum": ["exact", "tolerance", "keyword", "llm_judge_with_ref"]},
+    "tolerance": {"type": "number", "minimum": 0},
+    "source_type": {"enum": ["log", "expert", "synthetic"], "description": "log: taken from real usage; expert: written by a domain owner; synthetic: written to cover a contract. Synthetic questions carry the least authority."},
+    "expected": {"type": "string", "minLength": 1, "description": "Reference answer or the refusal wording the answer must contain."},
+    "must_disclose": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true, "description": "Caveats or unresolved states the answer must surface."},
+    "must_not": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true, "description": "Statements that mark the answer wrong even if the number is right."},
+    "expected_cards": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "status": {"enum": ["active", "quarantine", "deprecated"]},
+    "layer": {"enum": ["stable", "volatile"]},
+    "measured_on": {"type": "string", "format": "date"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"scoring_method": {"const": "tolerance"}}, "required": ["scoring_method"]},
+      "then": {"required": ["tolerance"]}
+    },
+    {
+      "if": {"properties": {"ground_truth_type": {"const": "measured_live"}}, "required": ["ground_truth_type"]},
+      "then": {"required": ["measured_on"], "properties": {"layer": {"const": "volatile"}}}
+    }
+  ]
+}

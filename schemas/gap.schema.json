@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/llm-wiki/gap.schema.json",
+  "title": "Knowledge gap record",
+  "description": "One line of a runtime gaps.jsonl. Written by the answering runtime when it could not answer from certified knowledge, or by a person registering a lead. A gap is a lead, never a card.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "gap_id", "registered_on", "registered_by", "question", "answered", "kind", "searched", "claims"],
+  "properties": {
+    "schema_version": {"const": 2},
+    "gap_id": {"type": "string", "minLength": 1},
+    "registered_on": {"type": "string", "format": "date-time"},
+    "registered_by": {"enum": ["runtime", "person"], "description": "Never a user identifier. The runtime keeps the requester mapping outside the record."},
+    "question": {"type": "string", "minLength": 1},
+    "answered": {"type": "boolean", "description": "Whether an answer was given at all. Required so that 'answered wrongly' and 'could not answer' are never confused."},
+    "kind": {
+      "enum": ["coverage-gap", "template-failure", "wrong-answer", "ranking-miss", "unavailable-interface", "transient"],
+      "description": "coverage-gap and template-failure are mutually exclusive: one means knowledge is missing, the other means knowledge exists but the compiled artifact failed."
+    },
+    "searched": {
+      "type": "array",
+      "items": {"type": "object", "required": ["surface", "top_cards"], "additionalProperties": false, "properties": {
+        "surface": {"type": "string", "minLength": 1},
+        "top_cards": {"type": "array", "items": {"type": "string"}}
+      }},
+      "description": "Evidence that retrieval was attempted, so a ranking miss can be told apart from missing knowledge."
+    },
+    "claims": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["text", "confidence"],
+        "properties": {
+          "text": {"type": "string", "minLength": 1},
+          "confidence": {"enum": ["user_confirmed", "verified_live", "narrated"], "description": "narrated: said in conversation and unverified; it may justify a ticket but never a card."},
+          "evidence_ref": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "candidate_cards": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "domain_hint": {"type": "string"}
+  }
+}

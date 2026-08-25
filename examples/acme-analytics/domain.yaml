@@ -1,8 +1,23 @@
 id: acme-analytics
 title: Acme Analytics
 description: Synthetic commerce analytics domain used only for documentation.
+status: active
+owner_role: domain owner role
 source_registry: raw/source-contracts.yaml
+handbook: AGENTS.md
+retirements: retirements.jsonl
+redirects: redirects.json
+changelog_dir: changelog
 routing_hints:
   - net revenue
+  - gross revenue
   - revenue after completed refunds
   - daily orders interface
+  - order status values
+  - commerce overview dashboard
+boundaries:
+  - topic: refund policy and customer support handling
+    owner_domain: acme-support
+    note: This domain knows how refunds affect revenue, not why a refund was granted.
+  - topic: cash collection and payment settlement
+    owner_domain: acme-finance

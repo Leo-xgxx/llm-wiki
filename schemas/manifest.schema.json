@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/llm-wiki/manifest.schema.json",
+  "title": "Build manifest row",
+  "description": "One row per active card in a deterministic build. Reviewed copies live in examples/**/evals/manifest.expected.jsonl; production manifests are generated outside Git.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "path", "type", "title", "status", "knowledge_role", "layer", "source_sha256"],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "path": {"type": "string", "minLength": 1, "description": "Relative to the domain root, forward slashes."},
+    "type": {"type": "string", "minLength": 1},
+    "title": {"type": "string", "minLength": 1},
+    "status": {"type": "string", "minLength": 1},
+    "knowledge_role": {"type": "string", "minLength": 1},
+    "layer": {"enum": ["direct", "guided", "knowledge"], "description": "Compiled answer layer, derived from the card, never hand-set."},
+    "effective_status": {"type": "string", "minLength": 1, "description": "Status after applying the freshness policy at build time."},
+    "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$", "description": "SHA-256 over the card's UTF-8 bytes with LF line endings, including the final newline."}
+  }
+}

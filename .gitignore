@@ -23,9 +23,12 @@ runtime/
 cache/
 caches/
 logs/
+proposals/
+gaps/
 
 build/
 dist/
 generated/
+_build/
 *.tmp
 *.log
