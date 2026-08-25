@@ -1,0 +1,2 @@
+{"id":"acme-analytics.metric.net-revenue","path":"wiki/metrics/net-revenue.md","type":"metric","title":"Net revenue","status":"certified","knowledge_role":"canonical","source_sha256":"9d18fded61b6f62c39f78a07afffe4c94917f89d0370b6988489354596810ac9"}
+{"id":"acme-analytics.dataset.orders-daily","path":"wiki/datasets/orders-daily.md","type":"dataset","title":"Daily orders interface","status":"certified","knowledge_role":"interface","source_sha256":"84f52b6c7dfce4163997e9203a2d58ffa2190dded30e72a08468e301305dc338"}

@@ -1,0 +1,8 @@
+id: acme-analytics
+title: Acme Analytics
+description: Synthetic commerce analytics domain used only for documentation.
+source_registry: raw/source-contracts.yaml
+routing_hints:
+  - net revenue
+  - revenue after completed refunds
+  - daily orders interface

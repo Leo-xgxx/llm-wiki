@@ -1,0 +1,300 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/lda-llm-wiki/card.schema.json",
+  "title": "Generic LLM Wiki card",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "type",
+    "domain",
+    "title",
+    "summary",
+    "status",
+    "knowledge_role",
+    "scope",
+    "relations",
+    "evidence",
+    "freshness"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+    },
+    "type": {
+      "enum": ["metric", "dataset"]
+    },
+    "domain": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "enum": ["draft", "review", "needs-decision", "certified", "deprecated", "stale"]
+    },
+    "knowledge_role": {
+      "enum": ["canonical", "interface"]
+    },
+    "maintainer": {
+      "type": "string",
+      "minLength": 1
+    },
+    "aliases": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "canonical_cards": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["grain", "time_semantics", "dimensions", "filters"],
+      "properties": {
+        "grain": {"type": "string", "minLength": 1},
+        "time_semantics": {"type": "string", "minLength": 1},
+        "dimensions": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        },
+        "filters": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        }
+      }
+    },
+    "definition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["formula", "unit"],
+      "properties": {
+        "formula": {"type": "string", "minLength": 1},
+        "unit": {"type": "string", "minLength": 1}
+      }
+    },
+    "query_interface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["adapter", "asset_key", "logical_fields", "availability"],
+      "properties": {
+        "adapter": {"type": "string", "minLength": 1},
+        "asset_key": {"type": "string", "minLength": 1},
+        "logical_fields": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "availability": {"type": "string", "minLength": 1}
+      }
+    },
+    "source_refs": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "relations": {
+      "$ref": "#/$defs/relations"
+    },
+    "evidence": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/evidence"}
+    },
+    "freshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["last_verified", "review_after"],
+      "properties": {
+        "last_verified": {"type": "string", "format": "date"},
+        "review_after": {"type": "string", "format": "date"}
+      }
+    },
+    "retirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outcome", "reason", "retired_on"],
+      "properties": {
+        "outcome": {"enum": ["replaced", "merged", "retired"]},
+        "target_card": {"type": "string", "minLength": 1},
+        "reason": {"type": "string", "minLength": 1},
+        "retired_on": {"type": "string", "format": "date"}
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "outcome": {"enum": ["replaced", "merged"]}
+            },
+            "required": ["outcome"]
+          },
+          "then": {"required": ["target_card"]}
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {"const": "retired"}
+            },
+            "required": ["outcome"]
+          },
+          "then": {"not": {"required": ["target_card"]}}
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "type": {"const": "metric"}
+        },
+        "required": ["type"]
+      },
+      "then": {
+        "required": ["definition"],
+        "properties": {
+          "knowledge_role": {"const": "canonical"}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "knowledge_role": {"const": "interface"}
+        },
+        "required": ["knowledge_role"]
+      },
+      "then": {
+        "required": ["canonical_cards", "query_interface"],
+        "properties": {
+          "type": {"const": "dataset"}
+        },
+        "not": {"required": ["definition"]}
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "knowledge_role": {"const": "canonical"}
+        },
+        "required": ["knowledge_role"]
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {"required": ["canonical_cards"]},
+            {"required": ["query_interface"]}
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {"const": "certified"}
+        },
+        "required": ["status"]
+      },
+      "then": {
+        "required": ["maintainer"],
+        "properties": {
+          "evidence": {
+            "minItems": 2,
+            "allOf": [
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {"const": "semantic-decision"}
+                  },
+                  "required": ["kind"]
+                }
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "enum": [
+                        "schema-contract",
+                        "interface-contract",
+                        "implementation-expression",
+                        "observed-output"
+                      ]
+                    }
+                  },
+                  "required": ["kind"]
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {"const": "deprecated"}
+        },
+        "required": ["status"]
+      },
+      "then": {"required": ["retirement"]},
+      "else": {"not": {"required": ["retirement"]}}
+    }
+  ],
+  "$defs": {
+    "relations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["depends_on", "related", "supersedes"],
+      "properties": {
+        "depends_on": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        },
+        "related": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        },
+        "supersedes": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "ref", "checked_at"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "schema-contract",
+            "interface-contract",
+            "implementation-expression",
+            "observed-output",
+            "semantic-decision"
+          ]
+        },
+        "ref": {"type": "string", "minLength": 1},
+        "checked_at": {"type": "string", "format": "date"}
+      }
+    }
+  }
+}

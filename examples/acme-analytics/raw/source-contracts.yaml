@@ -1,0 +1,27 @@
+version: 1
+notice: Synthetic contracts only; no rows, physical locations, queries, credentials, or real asset identifiers.
+contracts:
+  - id: acme-analytics.synthetic.orders-v1
+    kind: interface-contract
+    summary: Fictional logical order interface used to review the example cards.
+    grain: one row per order
+    time_field: recognition_date
+    logical_fields:
+      - recognition_date
+      - order_status
+      - refund_status
+      - gross_amount
+      - refund_amount
+      - product_category
+      - region
+    status_values:
+      - completed
+      - pending
+      - none
+    amount_unit: demo currency
+  - id: acme-analytics.synthetic.net-revenue-v1
+    kind: semantic-decision
+    summary: Daily net revenue is completed-order gross amount minus completed refunds, grouped by recognition date; pending states are excluded.
+  - id: acme-analytics.synthetic.orders-interface-v1
+    kind: semantic-decision
+    summary: The dataset card owns interface location, row grain, logical fields, and availability, while canonical metric cards own formulas and filters.
