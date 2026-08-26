@@ -18,6 +18,10 @@ Checks, in order:
      layer, effective_status, source_sha256) compared with evals/manifest.expected.jsonl.
   5. routing and golden evaluation records validate and point at existing cards.
 
+--write-manifest behaviour: validation errors prevent every requested manifest
+update. Targets are then updated independently in order; a failed target keeps
+its existing fixture and stops later updates.
+
 Exit status is 1 when any ERROR was reported.
 Requires PyYAML and jsonschema.
 """
