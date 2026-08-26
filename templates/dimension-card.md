@@ -5,6 +5,7 @@ domain: <domain>
 title: <title>
 summary: <what the field means and which values matter>
 status: draft
+# status_note: <required when status is stale; optional otherwise>
 knowledge_role: canonical
 maintainer: <role>
 aliases: []

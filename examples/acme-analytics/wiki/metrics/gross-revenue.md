@@ -24,6 +24,10 @@ definition:
   formula: sum(gross_amount)
   unit: demo currency
 execution_contract:
+  required_fields:
+    - recognition_date
+    - product_category
+    - region
   always_filter:
     - field: order_status
       op: eq

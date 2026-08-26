@@ -5,6 +5,7 @@ domain: <domain>
 title: <title>
 summary: <the wrong result and its cause in one sentence>
 status: draft
+# status_note: <required when status is stale; optional otherwise>
 knowledge_role: canonical
 maintainer: <role>
 aliases: []

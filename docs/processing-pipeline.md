@@ -19,7 +19,7 @@ A question being asked is not a reason to create a card. The full intake and min
 
 ## 2. Evidence collection
 
-Collect the smallest stable evidence needed to verify the proposed knowledge, register it in the domain's source registry with provenance, and store the managed snapshot under `raw/`. Exclude row dumps, full dependency graphs, temporary errors, signed URLs, sessions, and credentials. See [evidence-and-raw.md](evidence-and-raw.md).
+Collect the smallest stable evidence needed to verify the proposed knowledge, register it in the domain's source registry with complete provenance for every contract kind, and store the managed snapshot under `raw/`. Exclude row dumps, full dependency graphs, temporary errors, signed URLs, sessions, and credentials. See [evidence-and-raw.md](evidence-and-raw.md).
 
 ## 3. Normalization
 
@@ -28,6 +28,7 @@ Choose one canonical owner and one card type. Extract:
 - definition and formula over logical fields;
 - grain and time semantics;
 - inclusion and exclusion rules, written into the execution contract;
+- time-axis, grouping, and slicing fields that cannot be inferred from the formula or filters, written into `execution_contract.required_fields`;
 - dimensions and value-domain handling;
 - ambiguity boundaries; if a term is shared, the consistency card is part of the same change;
 - typed relations and evidence references.
@@ -39,15 +40,17 @@ Separate three kinds of statements before writing: **data facts** (a field's val
 Two levels, run in this order:
 
 1. **Frontmatter lint** on the changed files: required fields, enums, id format, dates. Fast, local, runs before every push.
-2. **Cross-record validation** on the whole domain: reference existence, registry resolution, supersedes reciprocity, tombstones, redirects, alias arbitration, formula coverage, freshness, brief length, manifest determinism.
+2. **Cross-record validation** on the whole domain: reference existence, complete registry provenance and snapshot artifact hashes, supersedes reciprocity through live retirements or tombstones, redirects, alias arbitration, formula and execution-field coverage by one single active bridging interface, interface-local field exposure, freshness, brief length, required non-empty eval fixtures, and manifest determinism. Availability is an additional condition for compiling that complete bridge as `direct`; an unavailable complete bridge remains valid but `guided`. Evaluation and gap references may use a retired id only when the redirect resolves to a current active card.
 
 Reject changes with missing required fields, duplicate ids, invalid statuses, broken links, conflicting ownership, shared aliases without an arbiter, or active references to retired cards.
+
+`tools/validate.py` implements these structural, reference, and fixture checks for the synthetic example. It does not run the retriever, measure rank, execute an adapter, or score a generated answer; those are the separate gates in steps 6 and 7.
 
 ## 5. Deterministic build
 
 Compile source cards into immutable runtime artifacts in the fixed build order (index → handbook projections → build → distributed pack). Store source and artifact hashes so the runtime can prove that its indexes and cards belong to the same release.
 
-The manifest contract includes at least the card id, source path, type, title, lifecycle state, knowledge role, compiled layer, effective status after freshness and source-content hash. Checked-in example manifests are named as expected-output fixtures; production manifests are generated outside Git.
+The manifest contract includes at least the card id, source path, type, title, lifecycle state, knowledge role, compiled layer, effective status after freshness and source-content hash. Checked-in example manifests are named as expected-output fixtures; production manifests are generated outside Git. `--write-manifest` is opt-in and writes only after validation has no errors: it rejects unsafe targets, writes a temporary file in the target directory, and atomically replaces the reviewed fixture. An error leaves the prior fixture untouched.
 
 ## 6. Ranking and runtime impact check
 
@@ -91,10 +94,10 @@ Failures arrive as gap records; the loop that turns them into tickets and change
 
 Deleting a card is a graph operation, not a file deletion:
 
-1. Remove active inbound references (`depends_on`, `canonical_cards`, `index_to`, arbitration parties). `supersedes` references are the exception: they are how the replacement points back.
+1. Remove active inbound references (`depends_on`, `canonical_cards`, `index_to`, arbitration parties). `supersedes` references are the permanent exception: they are how the replacement points back to a retired id.
 2. Mark the card `deprecated` with a `retirement` block: outcome, reason, date, and the target card for `replaced` and `merged`.
-3. Append a tombstone to the domain's `retirements.jsonl`: original id, outcome, optional target, reason, retirement date, final source hash.
-4. Add a redirect from the old id to its current home so evals, gap records and external links keep resolving.
+3. Append a tombstone to the domain's `retirements.jsonl`: original id, outcome, optional target, reason, retirement date, final source hash. Record that hash from the source card before deletion; after the source is gone the tombstone preserves it, but the repository cannot recompute it from a deleted file.
+4. Add a redirect from the old id to its current home so evals, gap records and external links keep resolving. The replacement keeps the old id in `supersedes`; validation requires the live retirement block or deleted card's tombstone to target that replacement. Other active card relations and ownership bridges use the current id.
 5. Delete the file in a later change and stamp `deleted_on` on the tombstone.
 
 The build validates tombstone targets and retains tombstones after deletion, so deletion does not erase the audit trail.

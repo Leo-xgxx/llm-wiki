@@ -1,7 +1,7 @@
 {
   "version": 1,
   "redirects": [
-    {"from": "acme-analytics.metric.daily-sales", "to": "acme-analytics.metric.net-revenue", "since": "2026-08-01", "reason": "merged"},
+    {"from": "acme-analytics.metric.daily-sales", "to": "acme-analytics.metric.net-revenue", "since": "2026-07-20", "reason": "merged"},
     {"from": "acme-analytics.metric.net-sales", "to": "acme-analytics.metric.net-revenue", "since": "2026-08-01", "reason": "replaced"}
   ]
 }

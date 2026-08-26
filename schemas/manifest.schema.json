@@ -5,7 +5,7 @@
   "description": "One row per active card in a deterministic build. Reviewed copies live in examples/**/evals/manifest.expected.jsonl; production manifests are generated outside Git.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["id", "path", "type", "title", "status", "knowledge_role", "layer", "source_sha256"],
+  "required": ["id", "path", "type", "title", "status", "knowledge_role", "layer", "effective_status", "source_sha256"],
   "properties": {
     "id": {"type": "string", "minLength": 1},
     "path": {"type": "string", "minLength": 1, "description": "Relative to the domain root, forward slashes."},

@@ -5,7 +5,7 @@
   "description": "domain.yaml at a domain root. Declares the domain's identity, registry, handbook and the files the build must consult.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["id", "title", "description", "status", "source_registry", "handbook", "routing_hints"],
+  "required": ["id", "title", "description", "status", "source_registry", "handbook", "retirements", "redirects", "changelog_dir", "routing_hints"],
   "properties": {
     "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
     "title": {"type": "string", "minLength": 1},

@@ -53,7 +53,7 @@ Every extracted statement carries one of:
 
 | Level | Meaning | May become |
 |---|---|---|
-| `verified_live` | checked against a live interface or definition on a date | card content with evidence |
+| `verified_live` | checked against authoritative technical evidence whose registry provenance was `live` and captured no later than the gap; the claim must name that `evidence_ref` | card content with evidence |
 | `user_confirmed` | the owning role confirmed it | card content with a semantic-decision contract |
 | `narrated` | said in conversation or found in a low-trust note; unverified | a gap record, a caveat, or a ticket; never card content |
 

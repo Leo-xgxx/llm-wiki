@@ -70,19 +70,20 @@ Each of these was done at least once and cost more to undo than to avoid.
 6. **Editing prose and leaving the contract.** The machine keeps executing the old contract; the review reads the new prose and approves.
 7. **Two cards holding one alias, resolved by "whichever ranks higher".** The answer changes whenever either card is edited. Write the consistency card.
 8. **Adding a guessed interface to make a metric `direct`.** The layer count improves; the answers are invented.
-9. **Certifying on a raw source reference.** A link to a document is not a decision. Certification needs a technical item and a semantic decision.
-10. **Hand-setting `stale`.** The freshness runner is the only writer; otherwise nobody knows whether the state is measured or asserted.
-11. **Annotating instead of deleting.** "Note: this may be outdated, see also …" is a debt with interest. Delete and repoint.
-12. **Bulk edits without a machine criterion.** Forty cards changed by pattern, three of them wrong, nobody can say which.
-13. **Committing generated artifacts and then hand-fixing them.** The next build reverts the fix and the hash check fails in a place nobody is looking.
-14. **Running build steps out of order.** The index is rebuilt after the pack; the pack ships yesterday's aliases.
-15. **Treating "all evals green" as "nothing moved".** Rank and layer are compared, not only assertions.
-16. **A salvage layer in the runtime.** A failed query becomes a cached or partial value with a confident sentence around it.
-17. **Reporting empty output as zero.** Unavailable, filtered and empty are three different facts.
-18. **Machine tickets written as intent.** "Fix the definition to be correct" produces improvisation; a literal template produces a diff.
-19. **Prose verdicts as merge conditions.** A parser guessing whether "looks fine apart from…" is an approval.
-20. **Merging in the same breath as reviewing.** The known finding ships because nobody re-read the counts.
-21. **Caps on throughput as a safety measure.** A daily quota does not make wrong changes right; it makes right changes late.
-22. **Mechanisms added after single incidents.** Every one is defensible; together they are unmaintainable. Remove one before adding one.
-23. **Metaphors for mechanisms.** A name that needs explaining is renamed by what it does.
-24. **Internal content in a public design repository.** Real names, asset ids, hosts, tokens, query results. The scan in `AGENTS.md` runs before every push.
+9. **Combining partial interfaces to make a metric `direct`.** No single adapter can execute the complete contract; one active available bridge must expose every required field itself.
+10. **Certifying on a raw source reference.** A link to a document is not a decision. Certification needs a technical item and a semantic decision.
+11. **Setting or clearing `stale` without a reason.** Freshness normally derives the effective state; an explicit source override needs a reviewed `status_note`, and re-verification must update the evidence and dates before clearing it.
+12. **Annotating instead of deleting.** "Note: this may be outdated, see also …" is a debt with interest. Delete and repoint.
+13. **Bulk edits without a machine criterion.** Forty cards changed by pattern, three of them wrong, nobody can say which.
+14. **Committing generated artifacts and then hand-fixing them.** The next build reverts the fix and the hash check fails in a place nobody is looking.
+15. **Running build steps out of order.** The index is rebuilt after the pack; the pack ships yesterday's aliases.
+16. **Treating "all evals green" as "nothing moved".** Rank and layer are compared, not only assertions.
+17. **A salvage layer in the runtime.** A failed query becomes a cached or partial value with a confident sentence around it.
+18. **Reporting empty output as zero.** Unavailable, filtered and empty are three different facts.
+19. **Machine tickets written as intent.** "Fix the definition to be correct" produces improvisation; a literal template produces a diff.
+20. **Prose verdicts as merge conditions.** A parser guessing whether "looks fine apart from…" is an approval.
+21. **Merging in the same breath as reviewing.** The known finding ships because nobody re-read the counts.
+22. **Caps on throughput as a safety measure.** A daily quota does not make wrong changes right; it makes right changes late.
+23. **Mechanisms added after single incidents.** Every one is defensible; together they are unmaintainable. Remove one before adding one.
+24. **Metaphors for mechanisms.** A name that needs explaining is renamed by what it does.
+25. **Internal content in a public design repository.** Real names, asset ids, hosts, tokens, query results. The scan in `AGENTS.md` runs before every push.

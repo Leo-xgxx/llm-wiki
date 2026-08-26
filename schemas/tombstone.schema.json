@@ -10,7 +10,7 @@
     "id": {"type": "string", "minLength": 1},
     "outcome": {"enum": ["replaced", "merged", "retired"]},
     "target_card": {"type": "string", "minLength": 1},
-    "reason": {"type": "string", "minLength": 1},
+    "reason": {"type": "string", "minLength": 1, "pattern": "\\S"},
     "retired_on": {"type": "string", "format": "date"},
     "final_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "deleted_on": {"type": "string", "format": "date", "description": "Date the file left the tree. Absent while the deprecated card file still exists."}

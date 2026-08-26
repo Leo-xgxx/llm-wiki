@@ -19,26 +19,38 @@ Deletion is a first-class outcome of review: a file that was useful during minin
 
 ## Provenance header
 
-Every snapshot carries, in the registry entry that names it:
+Every source-registry contract carries a complete provenance block, including semantic decisions and observed-output contracts as well as snapshots:
 
 - `origin`: a stable logical pointer to where it came from. In a public design repository this is a description; in a private deployment it may be a link, but never a signed one.
 - `captured_on`: the capture date.
-- `state_at_capture`: live, archived, draft, published, or unknown.
+- `state_at_capture`: exactly one of `live`, `archived`, `draft`, `published`, `approved`, or `unknown`.
 - `trust`: `authoritative`, `second-hand`, or `low`.
 
-A snapshot without provenance is a dump. The validator rejects registry contracts that lack it when they claim to be a document snapshot or interface contract.
+A contract without provenance cannot be reviewed. The validator rejects every registry contract missing any of these four fields; evidence kind does not create an exception. When a value-domain card records `captured_on`, that date must equal the provenance date of its source contract.
+
+`provenance.captured_on` describes the registry's current capture, not the first date the source ever existed. Re-capturing a stable contract may move that date forward. Every active card must then be reviewed against that current capture, so its ordering is `provenance.captured_on <= evidence.checked_at <= freshness.last_verified`. A deprecated card preserves a historical review act and may predate a later re-capture of the stable contract; it is not executable or answerable, so the validator does not reinterpret that historical date.
+
+A `document-snapshot` contract also carries an `artifact` block:
+
+```yaml
+artifact:
+  path: raw/snapshots/<slug>.md
+  sha256: <64 lowercase hexadecimal characters>
+```
+
+The path is relative to the domain root, must name a non-empty UTF-8 Markdown file directly under `raw/snapshots/`, cannot escape it, and resolves to a regular managed file. The hash covers that file's bytes. A source card that references this contract must repeat the same capture date and trust in `snapshot.captured_on` and `snapshot.trust`; a mismatch is a failed evidence bridge, not a warning.
 
 ## Standard raw layout
 
 ```text
 raw/
   source-contracts.yaml      the registry; every card reference resolves here
-  documents/<slug>/          one managed document snapshot per directory, with the extracted-statements note
+  snapshots/<slug>.md        managed document artifacts bound to registry path + SHA-256
   definitions/<slug>/        view and report definitions
   schemas/<slug>/            interface schemas
 ```
 
-One directory per source, thin, with the same slug as its registry contract. No nested copies, no versions side by side: a re-capture replaces the file and bumps `captured_on`; the changelog records what changed.
+One stable artifact path per source, kept thin. Each path belongs to exactly one `document-snapshot` contract, and every file under `raw/snapshots/` must be registered; orphan, nested, linked, and non-regular files fail validation. No versions side by side: a re-capture replaces the file, updates its SHA-256, and bumps `captured_on`; the changelog records what changed.
 
 ## Lineage policy
 
@@ -55,7 +67,7 @@ One directory per source, thin, with the same slug as its registry contract. No 
 
 ## The source card
 
-A `source` card is the graph's bridge from a snapshot to knowledge. It has role `evidence`, points at the registry contract through `snapshot.registry_ref`, and lists the canonical cards it supports in `index_to`. Its body records what was extracted, and what was deliberately not extracted — proposals, drafts and figures that are not knowledge yet. That second list is where the next gap record usually comes from.
+A `source` card is the graph's bridge from a snapshot to knowledge. It has role `evidence`, points through `snapshot.registry_ref` to a `document-snapshot` registry contract, repeats that contract's `captured_on` and `trust`, and lists the canonical cards it supports in `index_to`. Its body records what was extracted, and what was deliberately not extracted — proposals, drafts and figures that are not knowledge yet. That second list is where the next gap record usually comes from.
 
 ## What never enters the repository
 

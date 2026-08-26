@@ -25,13 +25,13 @@ A domain is the unit of ownership, routing and review. Its layout is fixed so th
   changelog/             one dated file per reviewed change
   retirements.jsonl      tombstones; append-only
   redirects.json         old ids -> current home
-  evals/                 routing.jsonl, golden.jsonl, manifest.expected.jsonl
+  evals/                 required, non-empty routing.jsonl, golden.jsonl, manifest.expected.jsonl
 ```
 
 Two rules follow from the layout:
 
 - The handbook is read before cards and overrides card prose. Anything that must hold for every answer in the domain goes there, not into ten cards.
-- Runtime write areas (`proposals/`, `gaps/`, caches) live outside the domain tree and outside Git.
+- Runtime write areas (`proposals/`, `gaps/`, caches) live outside the domain tree and outside Git. A tracked `gaps.example.jsonl` is allowed only under a synthetic example as a reviewed schema and cross-reference fixture.
 
 ## Source and card separation
 
@@ -48,17 +48,17 @@ Each concept, metric, value domain or decision rule has one canonical card. Card
 
 | Role | Owns | Points to |
 |---|---|---|
-| `canonical` | a definition, formula, value domain, procedure, trap or ruling | other canonical cards through typed relations |
-| `interface` | the location and access shape of a dataset or view | canonical cards through `canonical_cards` |
-| `evidence` | a managed snapshot and what was extracted from it | canonical cards through `index_to` |
+| `canonical` | a definition, formula, value domain, procedure, trap or ruling | cards of any role through typed navigation or dependency relations |
+| `interface` | the location and access shape of a dataset or view | canonical cards through `canonical_cards`; any role through typed navigation relations |
+| `evidence` | a managed snapshot and what was extracted from it | canonical cards through `index_to`; any role through typed navigation relations |
 
-Typed relations between canonical cards:
+Typed relations may cross roles when they express navigation or dependency:
 
 - `depends_on`: this card requires another definition to be understood.
 - `related`: navigation without ownership or dependency.
-- `supersedes`: this card replaces an older contract; the old card's `retirement.target_card` must point back.
+- `supersedes`: this card replaces an older contract. The id remains on the replacement after the old file is deleted; either the deprecated card's `retirement.target_card` or its tombstone must point back to the replacement.
 
-`canonical_cards` and `index_to` are ownership bridges, not graph edges. A build derives their reverse lookups so a metric can discover its interfaces and its evidence without copying location details.
+Relations never transfer semantic ownership. Only canonical cards participate in the semantic ownership hierarchy; `canonical_cards` and `index_to` are the ownership bridges and must target canonical cards. A build derives their reverse lookups so a metric can discover its interfaces and its evidence without copying location details.
 
 ## Build products
 
@@ -66,7 +66,7 @@ A deterministic compiler derives, from source cards only:
 
 - a manifest with one row per active card, including the compiled answer layer and the source hash;
 - a compiled layer per card: `direct`, `guided` or `knowledge` (see [retrieval-and-evaluation.md](retrieval-and-evaluation.md));
-- a brief per card, compiled from the first body section under a hard length limit;
+- a brief per card, compiled from the first body section under a hard 900-character limit; an overflow rejects the build;
 - domain capsules: the handbook plus the briefs of that domain's cards, for cheap navigation;
 - bidirectional typed relations and the reverse projections of the ownership bridges;
 - status and answer policy after applying the freshness rule;
@@ -76,7 +76,7 @@ Build products are disposable and never edited by hand. A clean checkout must re
 
 Build order matters when one product is the input of another. The reference order is: regenerate the retrieval index (aliases and briefs) → regenerate handbook projections → compile the build → package any distributed skill. Running a later step before an earlier one produces drift that looks like a content bug.
 
-Small files named `*.expected.jsonl` under an example's `evals/` directory are reviewed fixtures for the build contract, not runtime build products. `source_sha256` means SHA-256 over the source card's UTF-8 bytes with LF line endings, including the final newline; a build normalizes or rejects other line endings before hashing.
+Small files named `*.expected.jsonl` under an example's `evals/` directory are reviewed fixtures for the build contract, not runtime build products. `source_sha256` means SHA-256 over the source card's UTF-8 bytes with LF line endings, including the final newline; a build normalizes or rejects other line endings before hashing. The reference validator writes an expected manifest only after all checks pass, using a safe same-directory temporary file and atomic replacement; an error or unsafe target leaves the existing fixture unchanged.
 
 ## Consumption outlets
 

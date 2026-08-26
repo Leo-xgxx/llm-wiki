@@ -39,6 +39,9 @@ contracts:
       captured_on: "2026-08-25"
       state_at_capture: published
       trust: authoritative
+    artifact:
+      path: raw/snapshots/pricing-policy-memo.md
+      sha256: 4d7dba3be740ff015636a2d9c8b062f4835a12b63d2728bf7caabaecfaff6f92
   - id: acme-analytics.synthetic.refund-timing-observation-v1
     kind: observed-output
     summary: A dated review observed that queries subtracting pending refunds dip and then stay low; recorded as a pattern, without figures.
@@ -50,12 +53,32 @@ contracts:
   - id: acme-analytics.synthetic.net-revenue-v1
     kind: semantic-decision
     summary: Daily net revenue is completed-order gross amount minus completed refunds, grouped by recognition date; pending states are excluded.
+    provenance:
+      origin: fictional domain-owner decision recorded for this example
+      captured_on: "2026-08-25"
+      state_at_capture: approved
+      trust: authoritative
   - id: acme-analytics.synthetic.gross-revenue-v1
     kind: semantic-decision
     summary: Gross revenue is completed-order gross amount by recognition date with no refund adjustment; it is the reconciliation reference.
+    provenance:
+      origin: fictional domain-owner decision recorded for this example
+      captured_on: "2026-08-25"
+      state_at_capture: approved
+      trust: authoritative
   - id: acme-analytics.synthetic.orders-interface-v1
     kind: semantic-decision
     summary: The dataset card owns interface location, row grain, logical fields, and availability, while canonical metric cards own formulas and filters.
+    provenance:
+      origin: fictional interface-ownership decision recorded for this example
+      captured_on: "2026-08-25"
+      state_at_capture: approved
+      trust: authoritative
   - id: acme-analytics.synthetic.revenue-term-ruling-v1
     kind: semantic-decision
     summary: The bare term revenue routes to net revenue with a refund disclosure; gross, before refunds and order value route to gross revenue.
+    provenance:
+      origin: fictional terminology ruling recorded for this example
+      captured_on: "2026-08-25"
+      state_at_capture: approved
+      trust: authoritative

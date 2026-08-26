@@ -27,6 +27,10 @@ definition:
   formula: sum(gross_amount) - sum(refund_amount)
   unit: demo currency
 execution_contract:
+  required_fields:
+    - recognition_date
+    - product_category
+    - region
   always_filter:
     - field: order_status
       op: eq
@@ -50,6 +54,7 @@ relations:
     - acme-analytics.metric.gross-revenue
     - acme-analytics.trap.pending-refund-double-count
   supersedes:
+    - acme-analytics.metric.daily-sales
     - acme-analytics.metric.net-sales
 evidence:
   - kind: interface-contract

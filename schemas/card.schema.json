@@ -37,6 +37,7 @@
     "status_note": {
       "type": "string",
       "minLength": 1,
+      "pattern": "\\S",
       "description": "Why the card is in its current status, or who approved certification. Never a model name or a person's contact."
     },
     "knowledge_role": {
@@ -83,7 +84,7 @@
       "additionalProperties": false,
       "required": ["formula", "unit"],
       "properties": {
-        "formula": {"type": "string", "minLength": 1},
+        "formula": {"type": "string", "minLength": 1, "pattern": "\\S"},
         "unit": {"type": "string", "minLength": 1}
       }
     },
@@ -156,7 +157,15 @@
         "adapter": {"type": "string", "minLength": 1},
         "asset_key": {"type": "string", "minLength": 1},
         "logical_fields": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1, "uniqueItems": true},
-        "availability": {"type": "string", "minLength": 1},
+        "availability": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "reason"],
+          "properties": {
+            "status": {"enum": ["available", "unavailable"]},
+            "reason": {"type": "string", "minLength": 1, "pattern": "\\S"}
+          }
+        },
         "refresh": {"type": "string", "minLength": 1, "description": "Refresh cadence and the lag a reader should expect."}
       }
     },
@@ -166,7 +175,7 @@
     "snapshot": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["registry_ref", "captured_on", "origin_kind"],
+      "required": ["registry_ref", "captured_on", "origin_kind", "trust"],
       "properties": {
         "registry_ref": {"type": "string", "minLength": 1},
         "captured_on": {"type": "string", "format": "date"},
@@ -200,7 +209,7 @@
       "properties": {
         "outcome": {"enum": ["replaced", "merged", "retired"]},
         "target_card": {"type": "string", "minLength": 1},
-        "reason": {"type": "string", "minLength": 1},
+        "reason": {"type": "string", "minLength": 1, "pattern": "\\S"},
         "retired_on": {"type": "string", "format": "date"}
       },
       "allOf": [
@@ -336,6 +345,10 @@
       }
     },
     {
+      "if": {"properties": {"status": {"const": "stale"}}, "required": ["status"]},
+      "then": {"required": ["status_note"]}
+    },
+    {
       "if": {"properties": {"status": {"const": "deprecated"}}, "required": ["status"]},
       "then": {"required": ["retirement"]},
       "else": {"not": {"required": ["retirement"]}}
@@ -373,14 +386,48 @@
         "field": {"type": "string", "minLength": 1},
         "op": {"enum": ["eq", "neq", "in", "not_in", "is_null", "not_null", "gte", "lte"]},
         "value": {"type": ["string", "number", "boolean", "array", "null"]},
-        "reason": {"type": "string", "minLength": 1}
-      }
+        "reason": {"type": "string", "minLength": 1, "pattern": "\\S"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"op": {"enum": ["in", "not_in"]}}, "required": ["op"]},
+          "then": {
+            "properties": {
+              "value": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {"type": ["string", "number", "boolean"]}
+              }
+            }
+          }
+        },
+        {
+          "if": {"properties": {"op": {"enum": ["is_null", "not_null"]}}, "required": ["op"]},
+          "then": {"properties": {"value": {"const": null}}}
+        },
+        {
+          "if": {"properties": {"op": {"enum": ["eq", "neq"]}}, "required": ["op"]},
+          "then": {"properties": {"value": {"type": ["string", "number", "boolean"]}}}
+        },
+        {
+          "if": {"properties": {"op": {"enum": ["gte", "lte"]}}, "required": ["op"]},
+          "then": {"properties": {"value": {"type": ["string", "number"]}}}
+        }
+      ]
     },
     "execution_contract": {
       "type": "object",
       "additionalProperties": false,
       "description": "Machine-executed constraints. When prose and contract disagree, the contract wins; that is why editing the contract is part of every definition change.",
+      "required": ["required_fields"],
       "properties": {
+        "required_fields": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true,
+          "description": "Logical input fields required for execution but not mechanically inferable from formula or filters, such as time axes, grouping keys, and supported slice fields. Use an empty array when there are no additional inputs."
+        },
         "always_filter": {
           "type": "array",
           "items": {"$ref": "#/$defs/filter_item"},

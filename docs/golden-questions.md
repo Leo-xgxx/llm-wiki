@@ -19,9 +19,14 @@ Every record in `evals/golden.jsonl` (schema: [golden-question.schema.json](../s
 | `answer_type` | numeric, list, definition, source, refusal, arbitration, explanation | decides how the answer is scored |
 | `ground_truth_type` | measured_live, snapshot_verified, curator_arbitrated, owner_arbitrated, known_bug, absence_boundary | says where the truth came from; a measured value expires, a ruling does not |
 | `scoring_method` | exact, tolerance, keyword, llm_judge_with_ref | a judged answer always has a reference; free judging is not a method |
+| `expected` | numeric value for `answer_type: numeric`, otherwise non-blank reference text | only `scoring_method: tolerance` may carry `tolerance`, and it requires a numeric expected value; an unavailable value is modelled as a refusal or disclosure expectation, not as numeric prose |
 | `source_type` | log, expert, synthetic | questions taken from real usage carry the most authority; synthetic ones carry the least and must not be used to overrule a real user's complaint |
 | `must_disclose` / `must_not` | strings | the number can be right and the answer still wrong |
 | `status` / `layer` | active, quarantine, deprecated / stable, volatile | a volatile question depends on live data and may be quarantined without blocking a release |
+
+`evals/golden.jsonl` is required and non-empty in a complete domain. The reference validator checks each record's schema and card references, including old ids that resolve through redirects. It does not call an answering model or apply the scoring method; the end-to-end harness does that separately.
+
+`must_disclose` and `must_not` are disjoint after case and whitespace normalization. A measured record cannot be dated after the validation `as_of` date, and multiple old ids in one field may not collapse through redirects to the same active card.
 
 ## Refusal is an answer
 

@@ -13,17 +13,17 @@ The runtime consumes an immutable release of the build and answers questions. It
 1. Normalize the question into a task: subject, requested action (define, locate, compute, compare, explain a difference, check freshness, inventory), time window, slices.
 2. Read the domain handbook; apply boundary overrides.
 3. Route and resolve (see [retrieval-and-evaluation.md](retrieval-and-evaluation.md)); load context according to the compiled layer.
-4. Decide executability: is there a `direct` card, or a `guided` card plus an available adapter, or only knowledge?
+4. Decide executability: is there a `direct` card backed by one active, available interface that exposes all required fields, a `guided` card, or only knowledge?
 5. Execute or explain; assemble the answer with disclosures.
 6. If no certified knowledge answered, register a gap.
 
 ## Live execution rules
 
-- The execution contract is executed literally: `always_filter` on every run, `by_layer` filters only when the question names that view, `time_default` when no window is given. Prose is not consulted for filters.
+- The execution contract is executed literally: `required_fields` declares non-formula inputs, `always_filter` applies on every run, `by_layer` filters apply only when the question names that view, and `time_default` applies when no window is given. Prose is not consulted for fields or filters.
 - Name catalogues resolve exactly: one match is used, several are listed back, zero is an error. Short codes never match by substring.
 - No result is an error the user can retry, not a value. Salvaging a partial or cached value into an answer is forbidden.
 - Empty output is reported as "empty, filtered or unavailable — established: <which>", never as zero.
-- Nothing is computed through an interface the card does not declare. Guessing a dataset, a join key or a filter to make a question executable is the failure mode the whole system exists to prevent.
+- Nothing is computed through an interface the card does not declare. One active, available interface must expose the full field set by itself; fields from separate interfaces are not silently combined. Guessing a dataset, a join key or a filter to make a question executable is the failure mode the whole system exists to prevent.
 
 ## Time windows
 
@@ -55,15 +55,17 @@ Internal identifiers (card ids, contract ids, adapter names) stay internal unles
 
 ## Gap registration
 
-Whenever the answer did not come from certified knowledge — no card, wrong card, ranking miss, template failure, adapter unavailable — the runtime appends a gap record ([gap.schema.json](../schemas/gap.schema.json)):
+Whenever the answer did not come from certified knowledge — no card, wrong card, ranking miss, template failure, adapter unavailable — the runtime appends a gap record ([gap.schema.json](../schemas/gap.schema.json)) in an operational store outside Git:
 
 - `answered` is mandatory so that "answered wrongly" and "could not answer" are never merged;
 - `kind` distinguishes coverage gap from template failure; the two are mutually exclusive;
-- `searched` lists which surfaces were tried and what they returned, so a ranking miss is distinguishable from missing knowledge;
-- `claims` carry the confidence level; `narrated` claims may open a ticket and never a card;
+- `searched` is non-empty and lists which surfaces were tried and what they returned, so a ranking miss is distinguishable from missing knowledge;
+- `claims` carry the confidence level; every `verified_live` claim names authoritative technical registry evidence captured in `live` state no later than the gap, while `narrated` claims may open a ticket and never a card;
 - the requester is not in the record; the host keeps that mapping if it needs it.
 
 A person can also register a lead ("I heard that X is computed as Y") through the same record with `registered_by: person`. Registering is deliberately cheap and deliberately never produces a card by itself; the loop in [self-maintenance-loop.md](self-maintenance-loop.md) decides what happens next.
+
+The tracked `examples/**/gaps.example.jsonl` file is reviewed synthetic contract data only. It is not a runtime sink and is never appended to by an answering process.
 
 ## Output form
 

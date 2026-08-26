@@ -11,7 +11,7 @@
     "gap_id": {"type": "string", "minLength": 1},
     "registered_on": {"type": "string", "format": "date-time"},
     "registered_by": {"enum": ["runtime", "person"], "description": "Never a user identifier. The runtime keeps the requester mapping outside the record."},
-    "question": {"type": "string", "minLength": 1},
+    "question": {"type": "string", "minLength": 1, "pattern": "\\S"},
     "answered": {"type": "boolean", "description": "Whether an answer was given at all. Required so that 'answered wrongly' and 'could not answer' are never confused."},
     "kind": {
       "enum": ["coverage-gap", "template-failure", "wrong-answer", "ranking-miss", "unavailable-interface", "transient"],
@@ -19,9 +19,10 @@
     },
     "searched": {
       "type": "array",
+      "minItems": 1,
       "items": {"type": "object", "required": ["surface", "top_cards"], "additionalProperties": false, "properties": {
         "surface": {"type": "string", "minLength": 1},
-        "top_cards": {"type": "array", "items": {"type": "string"}}
+        "top_cards": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
       }},
       "description": "Evidence that retrieval was attempted, so a ranking miss can be told apart from missing knowledge."
     },
@@ -32,13 +33,19 @@
         "additionalProperties": false,
         "required": ["text", "confidence"],
         "properties": {
-          "text": {"type": "string", "minLength": 1},
+          "text": {"type": "string", "minLength": 1, "pattern": "\\S"},
           "confidence": {"enum": ["user_confirmed", "verified_live", "narrated"], "description": "narrated: said in conversation and unverified; it may justify a ticket but never a card."},
           "evidence_ref": {"type": "string", "minLength": 1}
-        }
+        },
+        "allOf": [
+          {
+            "if": {"properties": {"confidence": {"const": "verified_live"}}, "required": ["confidence"]},
+            "then": {"required": ["evidence_ref"]}
+          }
+        ]
       }
     },
-    "candidate_cards": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "candidate_cards": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
     "domain_hint": {"type": "string"}
   }
 }

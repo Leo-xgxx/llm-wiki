@@ -14,23 +14,65 @@
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["id", "kind", "summary"],
+        "additionalProperties": false,
+        "required": ["id", "kind", "summary", "provenance"],
         "properties": {
           "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*\\.[a-z0-9][a-z0-9.-]*$"},
           "kind": {"enum": ["schema-contract", "interface-contract", "implementation-expression", "observed-output", "document-snapshot", "semantic-decision"]},
-          "summary": {"type": "string", "minLength": 1},
+          "summary": {"type": "string", "minLength": 1, "pattern": "\\S"},
           "provenance": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["origin", "captured_on", "state_at_capture"],
+            "required": ["origin", "captured_on", "state_at_capture", "trust"],
             "properties": {
-              "origin": {"type": "string", "minLength": 1, "description": "A stable logical pointer to where the evidence came from. In a public repository this is a description, never a private URL or token."},
+              "origin": {"type": "string", "minLength": 1, "pattern": "\\S", "description": "A stable logical pointer to where the evidence came from. In a public repository this is a description, never a private URL or token."},
               "captured_on": {"type": "string", "format": "date"},
-              "state_at_capture": {"type": "string", "minLength": 1, "description": "Whether the origin was live, archived, draft, or unknown when captured."},
+              "state_at_capture": {
+                "enum": ["live", "archived", "draft", "published", "approved", "unknown"],
+                "description": "The lifecycle state of the origin at capture time."
+              },
               "trust": {"enum": ["authoritative", "second-hand", "low"]}
             }
+          },
+          "artifact": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "sha256"],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^raw/snapshots/[A-Za-z0-9][A-Za-z0-9._-]*\\.md$",
+                "description": "Path to a managed Markdown snapshot directly under raw/snapshots/."
+              },
+              "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+            }
+          },
+          "grain": {"type": "string", "minLength": 1, "pattern": "\\S"},
+          "time_field": {"type": "string", "minLength": 1, "pattern": "\\S"},
+          "logical_fields": {
+            "type": "array",
+            "items": {"type": "string", "minLength": 1, "pattern": "\\S"},
+            "uniqueItems": true
+          },
+          "status_values": {
+            "type": "object",
+            "propertyNames": {"pattern": "\\S"},
+            "additionalProperties": {
+              "type": "array",
+              "items": {"type": ["string", "number", "boolean"]},
+              "uniqueItems": true
+            }
+          },
+          "amount_unit": {"type": "string", "minLength": 1, "pattern": "\\S"}
+        },
+        "allOf": [
+          {
+            "if": {"properties": {"kind": {"const": "document-snapshot"}}, "required": ["kind"]},
+            "then": {"required": ["artifact"]},
+            "else": {"not": {"required": ["artifact"]}}
           }
-        }
+        ]
       }
     }
   }

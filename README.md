@@ -23,7 +23,8 @@
 docs/                         设计说明（英文）
 schemas/                      机器可读契约：卡片、域、来源登记、路由评测、金题、manifest、墓碑、跳转、缺口
 templates/                    九类卡模板 + 域手册 + 变更日志模板
-tools/validate.py             参考校验器：schema + 跨记录规则 + 确定性 manifest
+tools/validate.py             参考校验器：schema + 跨记录规则 + 示例 fixture；不执行真实检索或答题
+requirements.txt              参考校验器的固定 Python 依赖版本
 examples/acme-analytics/      完全虚构的示例域，覆盖每一种契约
   domain.yaml                 域描述：登记表、手册、边界、路由提示
   AGENTS.md                   域手册：先于卡片读取的硬规则
@@ -31,7 +32,7 @@ examples/acme-analytics/      完全虚构的示例域，覆盖每一种契约
   wiki/<type>/                九类卡各至少一张，含一张已废弃卡
   retirements.jsonl           墓碑；redirects.json 旧 id 跳转；changelog/ 变更记录
   evals/                      路由评测、金题、预期 manifest
-  gaps.example.jsonl          缺口记录示例
+  gaps.example.jsonl          纯合成缺口 fixture；运行态 gap 仍不入 Git
 ```
 
 数据流：
@@ -71,11 +72,14 @@ source evidence (with provenance)
 ## 校验
 
 ```bash
-pip install pyyaml jsonschema
-python3 tools/validate.py examples/acme-analytics
+python3 -m pip install -r requirements.txt
+python3 -m unittest -v
+python3 tools/validate.py examples/acme-analytics --as-of 2026-08-26
 ```
 
-零错误是提交的前提。修改示例卡后，经评审用 `--write-manifest` 重新生成预期 manifest，diff 是评审的一部分。
+测试通过且校验零错误是提交的前提，但只代表 schema、跨记录引用和已审阅 fixture 通过。固定 `--as-of 2026-08-26` 是示例 fixture 的复现日期，避免系统日期改变预期 manifest 的 `effective_status`；实际发布还应另用当前日期运行一次新鲜度检查。参考校验器不会运行真实 retriever/ranker、adapter、答案模型或 golden scorer；检索、排位回归和端到端答题仍是各自独立的运行时门禁。
+
+修改示例卡后，经评审用 `python3 tools/validate.py examples/acme-analytics --as-of 2026-08-26 --write-manifest` 重新生成预期 manifest，diff 是评审的一部分。该选项只会在全部校验无错误后，通过安全的同目录临时文件原子替换目标；校验失败或目标路径不安全时不会改写现有 fixture。
 
 ## 明确不记录的内容
 

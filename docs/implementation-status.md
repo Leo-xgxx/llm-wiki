@@ -5,10 +5,10 @@ What in this design has been run in earnest, what has only been designed, and wh
 | Area | Element | Status |
 |---|---|---|
 | card model | nine card types with per-type blocks | **in use** (a deployment carries more types; the nine here are the ones that earned a contract) |
-| card model | execution contract (`always_filter`, `by_layer`, `time_default`) | **in use** |
+| card model | execution contract (`required_fields`, `always_filter`, `by_layer`, `time_default`) with single-interface coverage | **in use** |
 | card model | consistency cards as alias arbiters; build error without one | **in use** |
 | card model | brief compiled from the first section with a hard limit | **in use** |
-| card model | `stale` runner-only; certification as re-verification obligation | **in use** |
+| card model | effective `stale` derived from freshness; explicit override requires a reviewed reason; certification as re-verification obligation | **in use** |
 | evidence | registry with provenance; KEEP/DELETE; source cards | **in use**; a second clean-up pass of process artefacts was still pending |
 | build | deterministic manifest with hashes; fixed build order; artifacts outside Git | **in use** |
 | build | three compiled layers and domain capsules | **in use** |
@@ -29,5 +29,5 @@ What in this design has been run in earnest, what has only been designed, and wh
 | removed | per-query contract gate | **built, then removed** |
 | removed | pre-routing modules, scope locks, salvage | **built, then removed** |
 | removed | throughput caps and time budgets in the loop | **built, then removed** |
-| this repository | reference validator (`tools/validate.py`) | **runs on the example**; not a production build |
+| this repository | reference validator (`tools/validate.py`) | **runs structural, reference and fixture checks on the example**; does not execute retrieval, ranking, adapters or answer scoring; not a production build |
 | this repository | licence | **not chosen** |

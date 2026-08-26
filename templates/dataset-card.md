@@ -5,6 +5,7 @@ domain: <domain>
 title: <title>
 summary: <what this interface locates>
 status: draft
+# status_note: <required when status is stale; optional otherwise>
 knowledge_role: interface
 maintainer: <role>
 aliases: []
@@ -20,7 +21,9 @@ query_interface:
   asset_key: <stable logical key; never a physical location>
   logical_fields:
     - <logical field>
-  availability: <availability contract; start with "available" only when a live adapter exists>
+  availability:
+    status: unavailable          # available | unavailable; use available only when a live adapter exists
+    reason: <how this state was established>
   refresh: <cadence and expected lag>
 source_refs: []
 relations:

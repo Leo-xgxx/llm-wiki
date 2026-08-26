@@ -38,7 +38,7 @@ freshness:
 
 ## What this source is
 
-A fictional internal memo, captured once, that states two things: refunds reduce revenue only once completed, and "revenue" in reports means the net figure. The snapshot itself would live under `raw/` with a provenance header; this card is the bridge that tells the graph which canonical cards the snapshot supports.
+A fictional policy memo, captured once, that states two things: refunds reduce revenue only once completed, and "revenue" in reports means the net figure. The managed synthetic snapshot exists at `raw/snapshots/pricing-policy-memo.md`; this card is the bridge that tells the graph which canonical cards the snapshot supports.
 
 ## What was extracted
 
@@ -51,4 +51,4 @@ Draft pricing tiers discussed in the memo. They were marked as proposals, so the
 
 ## Caveats
 
-Synthetic example only. No real document exists behind this card.
+Synthetic example only. The managed artifact is purpose-written for this fixture; no real production document exists behind it.

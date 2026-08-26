@@ -16,11 +16,11 @@ Every active card compiles to exactly one layer. The layer decides how much cont
 
 | Layer | Meaning | Default context |
 |---|---|---|
-| `direct` | a metric with an execution contract and at least one bridging interface whose adapter is live | compact execution metadata; the full card is not read |
+| `direct` | a metric whose formula, required, and filter fields are all exposed by one active bridging interface whose `availability.status` is exactly `available` | compact execution metadata; the full card is not read |
 | `guided` | an interface exists or a procedure is declared, but execution is not safe without reading the card | the full card |
 | `knowledge` | definition, value domain, ruling, trap, concept or evidence; nothing to execute | the full card |
 
-The layer is derived by the build, never hand-set. It must not be improved by adding guessed interfaces, guessed join keys, or lowered evidence requirements; a domain with few `direct` cards is an honest domain.
+The layer is derived by the build, never hand-set. Fields from several partial interfaces are never unioned to manufacture `direct`. It must not be improved by adding guessed interfaces, guessed join keys, or lowered evidence requirements; a domain with few `direct` cards is an honest domain.
 
 ## Capsules and the handbook
 
@@ -33,7 +33,7 @@ The handbook is read before the capsule's cards and overrides them. Hard rules t
 When the first route does not produce a confident candidate, the runtime descends a fixed ladder and records which rung answered:
 
 1. handbook boundary override (the topic is explicitly assigned elsewhere);
-2. term rewrite through aliases and the redirect table;
+2. term rewrite through aliases and the redirect table; old ids retained by evals, gap records, or external links resolve to their current active target here;
 3. asset index ("where do I look" questions match interface cards by name);
 4. full-text retrieval over briefs at the runtime cutoff;
 5. domain capsule read;
@@ -46,22 +46,26 @@ Rung 6 is a diagnostic surface. An answer that needed it is a routing gap and pr
 Every scored surface (title, aliases, summary, brief) competes with every other card's surfaces for the same top positions. Rules that follow:
 
 - **Aliases are concrete noun surfaces.** Question phrasing, generic verbs and time words inside an alias match unrelated questions; a single bad alias can push another domain's expected card below the cutoff.
-- **The brief stays inside its limit and inside its domain.** Examples, enumerations and other domains' product names are placed in non-scored sections.
+- **The brief stays inside its limit and inside its domain.** An overflow rejects the build. Examples, enumerations and other domains' product names are placed in non-scored sections.
 - **Rare terms are the lever, not length.** A short brief containing one rare cross-word fragment pulls harder than a long plain one. When a change displaces a neighbour, find the two or three rare terms that overlap the neighbour's question and rephrase them; do not shorten blindly.
 - **Reproduce at the runtime cutoff.** A ranking miss reproduced with a tool's default cutoff shows a different picture from the one the runtime sees.
 - **Shared surfaces need an arbiter.** Two active cards holding the same alias is a build error, full stop. The resolution is a consistency card that holds the alias, lists both cards as parties, and rules which one answers the bare term.
 
 ## Ranking safety records
 
-Every important route has a record in `evals/routing.jsonl`:
+Every important route has a record in `evals/routing.jsonl`. A complete domain keeps both `evals/routing.jsonl` and `evals/golden.jsonl` present and non-empty:
 
 - a positive query that should retrieve the canonical card;
 - paraphrases that exercise different wording;
 - a near-neighbour negative query using similar terms but a different subject;
-- a rank contract (`max_rank`) and the runtime `cutoff`;
-- an execution expectation: `knowledge-only`, `interface-locate`, `executable-if-available` (which names `required_interfaces`), or `ask-back` for questions that must not be answered without clarification.
+- a rank contract (`max_rank`) and the runtime `cutoff`, with `len(expected_cards) <= max_rank <= cutoff`; `expected_cards` is an all-of set, not a list of alternatives;
+- an execution expectation: `knowledge-only`, `interface-locate`, `executable-if-available`, or `ask-back` for questions that must not be answered without clarification. An executable record names at least one metric in `expected_cards`; its `required_interfaces` collectively bridge every expected metric, and every listed interface bridges at least one of them.
 
-A negative passes only when none of the positive `expected_cards` appears inside the cutoff. Records carry `layer` (`stable` or `volatile`) and `status` (`active`, `quarantine`, `deprecated`) so that a record depending on moving data can be quarantined without blocking a release.
+A negative passes only when none of the positive `expected_cards` appears inside the cutoff. Every record declares `cutoff`, `layer` (`stable` or `volatile`), and `status` (`active`, `quarantine`, `deprecated`) so that the runtime contract is reproducible and a record depending on moving data can be quarantined without blocking a release.
+
+Positive questions and paraphrases must not duplicate a negative query after case and whitespace normalization. Redirected ids are accepted for migration, but two ids in one field may not resolve to the same active card. `required_interfaces` is present only on `executable-if-available`; each expected metric has an execution contract and at least one listed interface that exposes its complete formula, required, and filter field set.
+
+The reference validator schema-checks these records and resolves their card ids, including old ids through redirects. It does not issue queries or assert that the expected card actually ranked within `max_rank`; a retrieval harness must run that gate at the declared cutoff.
 
 ## Rank regression and runtime impact
 

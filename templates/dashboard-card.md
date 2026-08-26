@@ -5,6 +5,7 @@ domain: <domain>
 title: <title>
 summary: <what the view shows and how it frames the data>
 status: draft
+# status_note: <required when status is stale; optional otherwise>
 knowledge_role: interface
 maintainer: <role>
 aliases: []
@@ -20,11 +21,16 @@ query_interface:
   asset_key: <stable logical key>
   logical_fields:
     - <field or metric exposed by the view>
-  availability: <availability contract>
+  availability:
+    status: unavailable          # available | unavailable
+    reason: <how this state was established>
 execution_contract:
+  required_fields:       # use [] when no extra logical inputs are needed
+    - <logical field exposed by this interface>
   by_layer:
     - layer: <chart or tab name>
-      metrics: []
+      metrics:
+        - <active metric card id>
       require_filter: []         # framing that applies only when the question names this view
       forbid_filter: []
 source_refs: []

@@ -25,11 +25,21 @@ query_interface:
   logical_fields:
     - recognition_date
     - region
+    - order_status
+    - refund_status
     - gross_amount
     - refund_amount
-  availability: synthetic example only
+  availability:
+    status: unavailable
+    reason: the demo adapter is fictional and has no executable connection in this repository
   refresh: daily
 execution_contract:
+  required_fields:
+    - recognition_date
+    - order_status
+    - refund_status
+    - gross_amount
+    - refund_amount
   by_layer:
     - layer: revenue-trend-chart
       metrics:

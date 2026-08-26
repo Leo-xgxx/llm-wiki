@@ -54,4 +54,4 @@ Reports built on this definition disagreed with recognition-date reports by the 
 
 ## Caveats
 
-This card stays in the tree only while inbound links are being cleaned. A tombstone will be appended to `retirements.jsonl` before the file is deleted.
+This card stays in the tree only while inbound links are being cleaned. Its reviewed tombstone already exists in `retirements.jsonl`; deletion will add `deleted_on` without changing the recorded final-card hash.

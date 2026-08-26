@@ -13,6 +13,8 @@ aliases:
 canonical_cards:
   - acme-analytics.metric.net-revenue
   - acme-analytics.metric.gross-revenue
+  - acme-analytics.dimension.order-status
+  - acme-analytics.concept.recognition-date
 scope:
   grain: one row per order
   time_semantics: partitioned by order recognition date
@@ -31,7 +33,9 @@ query_interface:
     - refund_amount
     - product_category
     - region
-  availability: synthetic example only
+  availability:
+    status: unavailable
+    reason: the demo adapter is fictional and has no executable connection in this repository
   refresh: daily, previous day complete by early morning
 source_refs:
   - acme-analytics.synthetic.orders-v1

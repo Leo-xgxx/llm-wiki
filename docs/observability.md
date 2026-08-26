@@ -22,7 +22,7 @@ Detectors run on a schedule, produce gap records or findings, and never edit car
 | drift patrol | a registry contract's origin changed (schema, view definition) since `captured_on` | a `wrong-answer` or `coverage-gap` lead on the cards indexing it |
 | usage audit | cards answered often with a disclosure; questions answered from rung 5–6; recurring ask-backs | `ranking-miss` leads, alias candidates |
 | asset discovery | interfaces referenced by questions but absent from any interface card | `coverage-gap` leads with `interface-locate` shape |
-| freshness runner | `review_after` passed | sets effective status `stale`; opens a re-verification ticket |
+| freshness runner | `review_after <= as_of` | sets effective status `stale`; opens a re-verification ticket |
 | coverage statistics | cards per type per domain, certified share, cards without any eval, metrics without an interface | a report, not a ticket |
 
 ## Reading the numbers

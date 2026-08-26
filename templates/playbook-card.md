@@ -5,12 +5,13 @@ domain: <domain>
 title: <title>
 summary: <what question shape this procedure answers>
 status: draft
+# status_note: <required when status is stale; optional otherwise>
 knowledge_role: canonical
 maintainer: <role>
 aliases: []
 procedure:
   question_shape: <the shape of question this answers>
-  executable: false              # true only when every step runs through a declared interface without guessing
+  executable: false              # true only with an active interface dependency that bridges every metric dependency
   inputs: []
   outputs: []
 source_refs: []

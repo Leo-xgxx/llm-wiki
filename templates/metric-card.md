@@ -5,6 +5,7 @@ domain: <domain>
 title: <title>
 summary: <one-sentence retrieval surface; no other domain's product names>
 status: draft
+# status_note: <required when status is stale; optional otherwise>
 knowledge_role: canonical
 importance: general
 maintainer: <role>
@@ -18,6 +19,8 @@ definition:
   formula: <formula over logical fields exposed by an interface card>
   unit: <unit>
 execution_contract:      # optional; machine-executed, wins over prose
+  required_fields:       # time axis, grouping, slices, or other inputs not visible in formula/filters; use [] if none
+    - <logical field>
   always_filter: []
   time_default:
     window: <default window>
@@ -37,7 +40,7 @@ freshness:
 
 ## Definition
 
-<!-- This section compiles into the brief (hard limit 900 chars). Bullet order is decision weight: the most important conclusion first. No dangling lead-ins ("the two cases are:"), no nested bullets, no other domain's product names, no example enumerations. -->
+<!-- This section compiles into the brief (hard limit 900 chars; overflow rejects the build). Bullet order is decision weight: the most important conclusion first. No dangling lead-ins ("the two cases are:"), no nested bullets, no other domain's product names, no example enumerations. -->
 
 - <what the metric is, in one sentence>
 - <the inclusion rule that most often goes wrong>

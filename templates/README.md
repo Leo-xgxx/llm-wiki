@@ -1,6 +1,6 @@
 # Templates
 
-One template per card type plus the two domain-level documents. Copy, fill, and run `tools/validate.py` on the domain.
+One template per card type plus the two domain-level documents. Copy, fill, and run `tools/validate.py` on the domain. The first `##` section must fit the 900-character brief limit; overflow is rejected. The reference validator checks structure, references, and fixtures, not live retrieval or answer quality.
 
 | Template | Type | Role |
 |---|---|---|
