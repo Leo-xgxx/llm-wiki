@@ -31,5 +31,5 @@ Read this file before any card in the domain. Rules here override card prose; ca
 
 ## Maintenance notes
 
-- New value in `order_status`: the interface contract changed; mark the dimension card stale, do not edit the value list by observation.
+- New value in `order_status`: set the dimension card to `needs-decision` and re-check the authoritative interface contract; do not edit the value list by observation. If review confirms the old card is invalid, deprecate or replace it.
 - New metric that shares a word with an existing one: write the consistency card in the same change.

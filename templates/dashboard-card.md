@@ -4,8 +4,8 @@ type: dashboard
 domain: <domain>
 title: <title>
 summary: <what the view shows and how it frames the data>
-status: draft
-# status_note: <required when status is stale; optional otherwise>
+status: draft             # draft | review | needs-decision | certified | deprecated; never stale
+# status_note: <optional context for the chosen lifecycle status>
 knowledge_role: interface
 maintainer: <role>
 aliases: []

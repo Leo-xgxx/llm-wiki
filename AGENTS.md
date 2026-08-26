@@ -26,6 +26,7 @@ Before every push, scan the tree for four classes of leakage and stop on any hit
 - An execution contract declares every non-formula input in `required_fields`. A metric becomes `direct` only when one active, available interface covers the formula, required, and filter fields by itself; never combine partial interfaces.
 - `by_layer.metrics` contains active metric card ids that also appear in the interface's `canonical_cards`. Every field used by an interface card's own execution contract must appear in that interface's `query_interface.logical_fields`.
 - Record uncertainty explicitly through status, evidence, freshness and disclosure; never resolve it by picking a side in prose.
+- Card files never set `status: stale`; only the freshness runner derives effective `stale`. Use `needs-decision` for unresolved uncertainty and `deprecated` with retirement records once invalidity is confirmed.
 - Structure before body: contract, handbook, bridges and evals change before prose.
 - Aliases are concrete noun surfaces; shared aliases are held by a consistency card.
 
@@ -36,4 +37,4 @@ Before every push, scan the tree for four classes of leakage and stop on any hit
 - Automate only checks with objective pass/fail criteria. Semantic decisions remain manual.
 - Deleting a card removes active references, marks it deprecated with a retirement block, appends a tombstone, and adds a redirect. A replacement keeps the deleted id in `supersedes`; its reverse target must remain provable from the tombstone.
 - Do not stack mechanisms: remove one before adding one; a single incident does not justify a gate.
-- Run `python3 -m unittest -v` and `python3 tools/validate.py examples/acme-analytics --as-of 2026-08-26` before opening a change; both must pass. The fixed date makes the reviewed fixture reproducible. This reference validator checks schemas, cross-record references, and fixtures; retrieval, ranking, adapter execution, and answer scoring remain separate gates.
+- Run `python3 -m unittest -v` and `python3 tools/validate.py examples/acme-analytics` before opening a change; both must pass. Validation date precedence is CLI `--as-of` override, then the domain's `fixture_as_of`, then today. The example fixture uses its declared date for reproducibility; a release must explicitly pass the actual release date with `--as-of`. This reference validator checks schemas, cross-record references, and fixtures; retrieval, ranking, adapter execution, and answer scoring remain separate gates.

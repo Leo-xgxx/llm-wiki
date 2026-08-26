@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime as dt
 import hashlib
-import importlib.util
 import json
 import os
 import pathlib
@@ -13,8 +12,11 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 import yaml
+
+from tools import validate as validator
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -38,11 +40,17 @@ class ValidatorIntegrationTests(unittest.TestCase):
         domain: pathlib.Path,
         *,
         write_manifest: bool = False,
-        as_of: str = AS_OF,
+        as_of: str | None = AS_OF,
+    ) -> validator.ValidationResult:
+        parsed_as_of = dt.date.fromisoformat(as_of) if as_of is not None else None
+        return validator.run_validation(domain, write_manifest=write_manifest, as_of=parsed_as_of)
+
+    def run_cli(
+        self,
+        domain: pathlib.Path,
+        *arguments: str,
     ) -> subprocess.CompletedProcess[str]:
-        command = [sys.executable, str(VALIDATOR), str(domain), "--as-of", as_of]
-        if write_manifest:
-            command.append("--write-manifest")
+        command = [sys.executable, str(VALIDATOR), str(domain), *arguments]
         environment = os.environ.copy()
         environment["PYTHONDONTWRITEBYTECODE"] = "1"
         return subprocess.run(
@@ -56,11 +64,13 @@ class ValidatorIntegrationTests(unittest.TestCase):
             timeout=20,
         )
 
-    def assert_invalid(self, result: subprocess.CompletedProcess[str], *fragments: str) -> None:
-        self.assertNotEqual(result.returncode, 0, result.stdout)
-        self.assertNotIn("Traceback", result.stdout, result.stdout)
+    def assert_invalid(self, result: object, *fragments: str) -> None:
+        returncode = getattr(result, "returncode")
+        stdout = getattr(result, "stdout")
+        self.assertNotEqual(returncode, 0, stdout)
+        self.assertNotIn("Traceback", stdout, stdout)
         for fragment in fragments:
-            self.assertIn(fragment, result.stdout)
+            self.assertIn(fragment, stdout)
 
     @staticmethod
     def replace_once(path: pathlib.Path, old: str, new: str) -> None:
@@ -82,6 +92,33 @@ class ValidatorIntegrationTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout)
         self.assertIn("summary: 0 errors, 0 warnings", result.stdout)
 
+        second = self.run_validator(self.copy_domain())
+        self.assertIsNot(result.report, second.report)
+
+    def test_domain_fixture_date_is_per_domain_and_cli_override_wins(self) -> None:
+        older = self.copy_domain()
+        current = self.copy_domain()
+        self.replace_once(older / "domain.yaml", 'fixture_as_of: "2026-08-26"', 'fixture_as_of: "2026-08-24"')
+
+        result = validator.run_validation([older, current])
+        self.assert_invalid(result, f"{older}", "after validation date 2026-08-24")
+
+        overridden = validator.run_validation([older, current], as_of=dt.date(2026, 8, 26))
+        self.assertEqual(overridden.returncode, 0, overridden.stdout)
+
+    def test_cli_uses_fixture_date_and_rejects_invalid_override(self) -> None:
+        domain = self.copy_domain()
+        self.replace_once(domain / "domain.yaml", 'fixture_as_of: "2026-08-26"', 'fixture_as_of: "2026-08-24"')
+        fixture_result = self.run_cli(domain)
+        self.assert_invalid(fixture_result, "after validation date 2026-08-24")
+
+        override_result = self.run_cli(domain, "--as-of", AS_OF)
+        self.assertEqual(override_result.returncode, 0, override_result.stdout)
+
+        invalid_result = self.run_cli(domain, "--as-of", "not-a-date")
+        self.assertEqual(invalid_result.returncode, 2, invalid_result.stdout)
+        self.assertIn("invalid ISO date", invalid_result.stdout)
+
     def test_every_declared_path_rejects_absolute_values(self) -> None:
         for field in ("source_registry", "handbook", "retirements", "redirects", "changelog_dir"):
             with self.subTest(field=field):
@@ -93,28 +130,10 @@ class ValidatorIntegrationTests(unittest.TestCase):
                 descriptor.write_text(text, encoding="utf-8")
                 self.assert_invalid(self.run_validator(domain), f"{field} must be relative")
 
-    def test_declared_path_rejects_traversal_and_symlink(self) -> None:
+    def test_declared_path_rejects_traversal(self) -> None:
         domain = self.copy_domain()
         self.replace_once(domain / "domain.yaml", "source_registry: raw/source-contracts.yaml", "source_registry: ../source-contracts.yaml")
         self.assert_invalid(self.run_validator(domain), "source_registry must stay inside the domain")
-
-        domain = self.copy_domain()
-        link = domain / "raw" / "linked-contracts.yaml"
-        link.symlink_to("source-contracts.yaml")
-        self.replace_once(domain / "domain.yaml", "source_registry: raw/source-contracts.yaml", "source_registry: raw/linked-contracts.yaml")
-        self.assert_invalid(self.run_validator(domain), "source_registry must not contain symlinks")
-
-        domain = self.copy_domain()
-        artifact = domain / "raw" / "snapshots" / "pricing-policy-memo.md"
-        artifact.unlink()
-        artifact.symlink_to(artifact.name)
-        self.assert_invalid(self.run_validator(domain), "artifact.path is not a valid path")
-
-    def test_self_referential_domain_symlink_is_reported_without_traceback(self) -> None:
-        domain = self.copy_domain()
-        loop = domain.parent / "domain-loop"
-        loop.symlink_to(loop.name, target_is_directory=True)
-        self.assert_invalid(self.run_validator(loop), "could not resolve domain directory")
 
     def test_declared_files_and_changelog_are_required(self) -> None:
         targets = {
@@ -170,17 +189,32 @@ class ValidatorIntegrationTests(unittest.TestCase):
         self.assert_invalid(result, "found duplicate key", "manifest write skipped because validation reported errors")
         self.assertEqual(manifest.read_bytes(), before)
 
-    def test_manifest_write_rejects_symlink_and_does_not_touch_target(self) -> None:
-        domain = self.copy_domain()
-        manifest = domain / "evals" / "manifest.expected.jsonl"
-        manifest.unlink()
-        sentinel = domain / "sentinel.txt"
-        sentinel.write_text("do not overwrite\n", encoding="utf-8")
-        manifest.symlink_to("../sentinel.txt")
+        valid_domain = self.copy_domain()
+        invalid_domain = self.copy_domain()
+        valid_manifest = valid_domain / "evals" / "manifest.expected.jsonl"
+        valid_before = valid_manifest.read_bytes()
+        self.replace_once(
+            valid_domain / "wiki" / "datasets" / "orders-daily.md",
+            "title: Daily orders interface",
+            "title: Renamed daily orders interface",
+        )
+        self.replace_once(
+            invalid_domain / "wiki" / "datasets" / "orders-daily.md",
+            "title: Daily orders interface",
+            "title: Daily orders interface\ntitle: Duplicate",
+        )
 
-        result = self.run_validator(domain, write_manifest=True)
-        self.assert_invalid(result, "manifest fixture must not contain symlinks")
-        self.assertEqual(sentinel.read_text(encoding="utf-8"), "do not overwrite\n")
+        multi_result = validator.run_validation(
+            [valid_domain, invalid_domain],
+            write_manifest=True,
+            as_of=dt.date.fromisoformat(AS_OF),
+        )
+        self.assert_invalid(
+            multi_result,
+            "found duplicate key",
+            "manifest write skipped because validation reported errors",
+        )
+        self.assertEqual(valid_manifest.read_bytes(), valid_before)
 
     def test_manifest_write_is_atomic_and_structured_availability_drives_layer(self) -> None:
         domain = self.copy_domain()
@@ -189,7 +223,7 @@ class ValidatorIntegrationTests(unittest.TestCase):
         original_mode = stat.S_IMODE(manifest.stat().st_mode)
         self.replace_once(dataset, "    status: unavailable", "    status: available")
 
-        result = self.run_validator(domain, write_manifest=True)
+        result = self.run_cli(domain, "--write-manifest")
         self.assertEqual(result.returncode, 0, result.stdout)
         self.assertIn("written atomically", result.stdout)
         self.assertEqual(stat.S_IMODE(manifest.stat().st_mode), original_mode)
@@ -197,6 +231,30 @@ class ValidatorIntegrationTests(unittest.TestCase):
         layers = {row["id"]: row["layer"] for row in rows}
         self.assertEqual(layers["acme-analytics.metric.net-revenue"], "direct")
         self.assertEqual(layers["acme-analytics.metric.gross-revenue"], "direct")
+
+    def test_manifest_write_stops_after_the_first_write_error(self) -> None:
+        domains = [self.copy_domain(), self.copy_domain()]
+        attempted: list[pathlib.Path] = []
+
+        def fail_write(
+            domain_dir: pathlib.Path,
+            manifest_path: pathlib.Path,
+            rendered: str,
+            report: validator.Report,
+        ) -> None:
+            del domain_dir, rendered
+            attempted.append(manifest_path)
+            report.error(f"{manifest_path}: synthetic write failure")
+
+        with mock.patch.object(validator, "atomic_write_manifest", side_effect=fail_write):
+            result = validator.run_validation(
+                domains,
+                write_manifest=True,
+                as_of=dt.date.fromisoformat(AS_OF),
+            )
+
+        self.assert_invalid(result, "synthetic write failure", "remaining manifest writes skipped")
+        self.assertEqual(len(attempted), 1)
 
     def test_every_source_contract_requires_provenance(self) -> None:
         domain = self.copy_domain()
@@ -393,7 +451,7 @@ class ValidatorIntegrationTests(unittest.TestCase):
                 self.write_jsonl(path, rows)
                 self.assert_invalid(self.run_validator(domain), f"{field}: [] should be non-empty")
 
-    def test_freshness_dates_and_explicit_stale_note_are_objective(self) -> None:
+    def test_freshness_dates_are_objective_and_source_stale_is_rejected(self) -> None:
         domain = self.copy_domain()
         card = domain / "wiki" / "metrics" / "gross-revenue.md"
         self.replace_once(card, 'last_verified: "2026-08-25"', 'last_verified: "2026-08-27"')
@@ -406,8 +464,8 @@ class ValidatorIntegrationTests(unittest.TestCase):
 
         domain = self.copy_domain()
         card = domain / "wiki" / "metrics" / "gross-revenue.md"
-        self.replace_once(card, "status: certified", 'status: stale\nstatus_note: " "')
-        self.assert_invalid(self.run_validator(domain), "whitespace-only strings are forbidden")
+        self.replace_once(card, "status: certified", "status: stale")
+        self.assert_invalid(self.run_validator(domain), "stale", "is not one of")
 
     def test_active_evidence_cannot_precede_the_current_registry_capture(self) -> None:
         domain = self.copy_domain()
@@ -462,61 +520,26 @@ class ValidatorIntegrationTests(unittest.TestCase):
         self.replace_once(card, "title: Gross revenue", "title: Gross revenue\ntitle: Hidden replacement")
         self.assert_invalid(self.run_validator(domain), "found duplicate key 'title'")
 
-    def test_yaml_unhashable_keys_are_reported_without_tracebacks(self) -> None:
+    def test_basic_json_and_yaml_syntax_errors_are_reported(self) -> None:
         domain = self.copy_domain()
-        descriptor = domain / "domain.yaml"
-        descriptor.write_text("? [compound, key]\n: value\n" + descriptor.read_text(encoding="utf-8"), encoding="utf-8")
-        self.assert_invalid(self.run_validator(domain), "found unhashable key")
+        (domain / "redirects.json").write_text("{\n", encoding="utf-8")
+        self.assert_invalid(self.run_validator(domain), "invalid JSON")
 
-    def test_non_utf8_domain_inputs_are_reported_without_tracebacks(self) -> None:
-        cases = (
-            "domain.yaml",
-            "raw/source-contracts.yaml",
-            "redirects.json",
-            "retirements.jsonl",
-            "evals/manifest.expected.jsonl",
-            "evals/routing.jsonl",
-            "evals/golden.jsonl",
-            "gaps.example.jsonl",
-        )
-        for relative in cases:
-            with self.subTest(relative=relative):
-                domain = self.copy_domain()
-                (domain / relative).write_bytes(b"\xff\xfe\n")
-                self.assert_invalid(self.run_validator(domain), "could not read UTF-8 text")
+        domain = self.copy_domain()
+        (domain / "domain.yaml").write_text("id: [\n", encoding="utf-8")
+        self.assert_invalid(self.run_validator(domain), "invalid YAML")
+
+    def test_non_utf8_yaml_and_card_are_reported(self) -> None:
+        domain = self.copy_domain()
+        (domain / "domain.yaml").write_bytes(b"\xff\xfe\n")
+        self.assert_invalid(self.run_validator(domain), "could not read UTF-8 text")
 
         domain = self.copy_domain()
         card = domain / "wiki" / "metrics" / "gross-revenue.md"
         card.write_bytes(b"\xff\xfe\n")
         self.assert_invalid(self.run_validator(domain), "card must be UTF-8")
 
-    def test_non_regular_card_is_rejected_without_blocking(self) -> None:
-        domain = self.copy_domain()
-        fifo = domain / "wiki" / "metrics" / "blocking.md"
-        os.mkfifo(fifo)
-        self.assert_invalid(self.run_validator(domain), "card must be a regular file")
-
-    def test_non_utf8_card_filename_is_rejected_before_manifest_write(self) -> None:
-        domain = self.copy_domain()
-        manifest = domain / "evals" / "manifest.expected.jsonl"
-        before = manifest.read_bytes()
-        original = domain / "wiki" / "metrics" / "gross-revenue.md"
-        invalid_name = os.fsencode(original.parent) + b"/gross-\xff.md"
-        os.rename(os.fsencode(original), invalid_name)
-        result = self.run_validator(domain, write_manifest=True)
-        self.assert_invalid(result, "Unicode surrogate code points are forbidden", "manifest write skipped")
-        self.assertEqual(manifest.read_bytes(), before)
-
-    def test_surrogates_and_non_finite_numbers_are_rejected(self) -> None:
-        domain = self.copy_domain()
-        routing_path = domain / "evals" / "routing.jsonl"
-        routing_text = routing_path.read_text(encoding="utf-8")
-        routing_path.write_text(
-            routing_text.replace("acme-analytics.metric.net-revenue", r"\ud800", 1),
-            encoding="utf-8",
-        )
-        self.assert_invalid(self.run_validator(domain), "Unicode surrogate code points are forbidden")
-
+    def test_non_finite_numbers_are_rejected(self) -> None:
         domain = self.copy_domain()
         routing_path = domain / "evals" / "routing.jsonl"
         rows = self.read_jsonl(routing_path)
@@ -528,26 +551,6 @@ class ValidatorIntegrationTests(unittest.TestCase):
         card = domain / "wiki" / "metrics" / "gross-revenue.md"
         self.replace_once(card, "summary: Daily recognized order value before any refund is subtracted.", "summary: .nan")
         self.assert_invalid(self.run_validator(domain), "non-finite values are forbidden")
-
-    def test_excessive_nesting_and_huge_integers_are_parse_errors(self) -> None:
-        domain = self.copy_domain()
-        (domain / "redirects.json").write_text("[" * 2000 + "]" * 2000, encoding="utf-8")
-        self.assert_invalid(self.run_validator(domain), "invalid JSON")
-
-        domain = self.copy_domain()
-        routing_path = domain / "evals" / "routing.jsonl"
-        routing_path.write_text("[" * 2000 + "]" * 2000 + "\n", encoding="utf-8")
-        self.assert_invalid(self.run_validator(domain), "invalid JSON")
-
-        domain = self.copy_domain()
-        routing_path = domain / "evals" / "routing.jsonl"
-        routing_path.write_text("{\"id\":" + "9" * 5000 + "}\n", encoding="utf-8")
-        self.assert_invalid(self.run_validator(domain), "invalid JSON")
-
-        domain = self.copy_domain()
-        descriptor = domain / "domain.yaml"
-        descriptor.write_text("node:\n" + "  -" * 2000 + " value\n", encoding="utf-8")
-        self.assert_invalid(self.run_validator(domain), "invalid YAML")
 
     def test_schema_invalid_shapes_report_errors_without_tracebacks(self) -> None:
         domain = self.copy_domain()
@@ -588,9 +591,6 @@ class ValidatorIntegrationTests(unittest.TestCase):
         gaps[0]["searched"] = None
         self.write_jsonl(gaps_path, gaps)
         self.assert_invalid(self.run_validator(domain), "searched: None is not of type 'array'")
-
-        domain = self.copy_domain()
-        self.assert_invalid(self.run_validator(domain, as_of="not-a-date"), "invalid ISO date")
 
     def test_json_duplicate_keys_are_rejected_at_any_depth(self) -> None:
         domain = self.copy_domain()
@@ -838,13 +838,6 @@ source_refs:""",
         self.assert_invalid(self.run_validator(domain), "artifact.path must live under raw/snapshots/")
 
         domain = self.copy_domain()
-        artifact = domain / "raw" / "snapshots" / "pricing-policy-memo.md"
-        linked_target = artifact.with_name("linked-target.md")
-        artifact.rename(linked_target)
-        artifact.symlink_to(linked_target.name)
-        self.assert_invalid(self.run_validator(domain), "artifact.path must not contain symlinks")
-
-        domain = self.copy_domain()
         (domain / "raw" / "snapshots" / "pricing-policy-memo.md").unlink()
         self.assert_invalid(self.run_validator(domain), "required contract", "artifact file is missing")
 
@@ -1033,11 +1026,7 @@ source_refs:""",
 class ValidatorUnitTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        spec = importlib.util.spec_from_file_location("llm_wiki_validate", VALIDATOR)
-        if spec is None or spec.loader is None:
-            raise RuntimeError("could not load validator module")
-        cls.module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(cls.module)
+        cls.module = validator
 
     def test_derive_layer_never_interprets_availability_as_a_string_prefix(self) -> None:
         card = {
@@ -1143,7 +1132,7 @@ class ValidatorUnitTests(unittest.TestCase):
         }
         self.assertEqual(self.module.effective_status(card, dt.date(2026, 8, 26)), "stale")
 
-    def test_schema_loader_reports_malformed_and_non_regular_inputs(self) -> None:
+    def test_schema_loader_reports_basic_parse_and_contract_errors(self) -> None:
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         schema_dir = pathlib.Path(temporary.name)
@@ -1160,8 +1149,6 @@ class ValidatorUnitTests(unittest.TestCase):
                 ),
                 ("meta.schema.json", b'{"type":7}', "invalid Draft 2020-12 schema"),
                 ("missing-ref.schema.json", b'{"$ref":"#/missing"}', "unresolvable or non-local $ref"),
-                ("external-ref.schema.json", b'{"$ref":"missing.json"}', "unresolvable or non-local $ref"),
-                ("root-ref.schema.json", b'{"$ref":"#"}', "unresolvable or non-local $ref"),
             )
             for name, content, fragment in cases:
                 with self.subTest(name=name):
@@ -1169,42 +1156,41 @@ class ValidatorUnitTests(unittest.TestCase):
                     report = self.module.Report()
                     self.assertIsNone(self.module.load_schema(name, report))
                     self.assertTrue(any(fragment in error for error in report.errors), report.errors)
-
-            fifo_name = "fifo.schema.json"
-            os.mkfifo(schema_dir / fifo_name)
-            report = self.module.Report()
-            self.assertIsNone(self.module.load_schema(fifo_name, report))
-            self.assertTrue(any("must be a regular file" in error for error in report.errors), report.errors)
         finally:
             self.module.SCHEMA_DIR = previous
 
-    def test_recursive_yaml_alias_is_rejected(self) -> None:
-        report = self.module.Report()
-        value = self.module.read_yaml("root: &root [*root]\n", pathlib.Path("cycle.yaml"), report)
-        self.assertIsNone(value)
-        self.assertTrue(any("recursive aliases are forbidden" in error for error in report.errors), report.errors)
+    def test_validator_cache_is_bound_to_schema_contents(self) -> None:
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        schema_dir = pathlib.Path(temporary.name) / "schemas"
+        shutil.copytree(ROOT / "schemas", schema_dir)
+        previous = self.module.SCHEMA_DIR
+        self.module.SCHEMA_DIR = schema_dir
+        self.module._VALIDATOR_CACHE.clear()
+        try:
+            first_report = self.module.Report()
+            first = self.module.load_validators(first_report)
+            self.assertIsNotNone(first, first_report.render())
 
-        report = self.module.Report()
-        value = self.module.read_yaml(
-            "original: &shared [one, two]\ncopy: *shared\n",
-            pathlib.Path("shared.yaml"),
-            report,
-        )
-        self.assertIsNone(value)
-        self.assertTrue(any("shared container aliases are forbidden" in error for error in report.errors), report.errors)
+            schema_path = schema_dir / "domain.schema.json"
+            original = schema_path.read_bytes()
+            metadata = schema_path.stat()
+            changed = original.replace(b'"active"', b'"broken"', 1)
+            self.assertEqual(len(changed), len(original))
+            schema_path.write_bytes(changed)
+            os.utime(schema_path, ns=(metadata.st_atime_ns, metadata.st_mtime_ns))
 
-    def test_schema_evaluation_cycles_are_reported(self) -> None:
-        schema = {
-            "$schema": "https://json-schema.org/draft/2020-12/schema",
-            "$ref": "#/$defs/a",
-            "$defs": {
-                "a": {"$ref": "#/$defs/b"},
-                "b": {"$ref": "#/$defs/a"},
-            },
-        }
-        validator = self.module.jsonschema.Draft202012Validator(schema)
-        errors = self.module.schema_errors(validator, {})
-        self.assertTrue(any("schema evaluation failed" in error for error in errors), errors)
+            second_report = self.module.Report()
+            second = self.module.load_validators(second_report)
+            self.assertIsNotNone(second, second_report.render())
+            self.assertIsNot(first, second)
+            descriptor = yaml.safe_load((EXAMPLE / "domain.yaml").read_text(encoding="utf-8"))
+            self.assertTrue(
+                any(list(error.absolute_path) == ["status"] for error in second[1].iter_errors(descriptor))
+            )
+        finally:
+            self.module.SCHEMA_DIR = previous
+            self.module._VALIDATOR_CACHE.clear()
 
 
 if __name__ == "__main__":

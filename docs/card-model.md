@@ -18,7 +18,7 @@ A card defines a stable method, not the wording of a temporary question. The tes
 | `domain` | canonical ownership boundary |
 | `title` / `summary` | human and retrieval surfaces |
 | `status` | lifecycle and answer policy |
-| `status_note` | required for an explicit `stale` source state; optional explanatory context for every other state |
+| `status_note` | optional explanatory context for an author-set status; it never overrides freshness or permits `status: stale` |
 | `knowledge_role` | canonical, interface or evidence |
 | `relations` | typed graph edges |
 | `evidence` | dated review acts against registry contracts |
@@ -135,13 +135,15 @@ Aliases are the retrieval surface most likely to break neighbours. Rules:
 | `needs-decision` | technical evidence sufficient, meaning must be decided by an owner | disclose the open decision | anyone |
 | `certified` | evidence and semantics accepted | eligible as a default answer | the certification gate only |
 | `deprecated` | replaced by a newer contract | historical navigation only | a reviewed change |
-| `stale` | freshness contract expired, or a reviewed explicit stale override records a known invalidity | disclose staleness | derived by freshness; explicit source state only with `status_note` |
+| effective `stale` | freshness contract expired | disclose staleness | freshness runner only; never written into a card file |
+
+The first five rows are card-file statuses. Effective `stale` appears only in derived build or runtime state.
 
 Technical evidence and semantic approval are separate axes. A system can prove how something is currently computed without deciding whether that computation is the intended definition; that gap is exactly `needs-decision`.
 
 `certified` is not a badge, it is a signed obligation: the card must be re-verified before `review_after`. A certified card needs a maintainer role, at least one technical evidence item (schema, interface, implementation, observed output or document snapshot) and one `semantic-decision` whose registry provenance is both `approved` and `authoritative`. A raw source reference, draft decision, or low-trust decision is not approval.
 
-`review_after` is the first expired day, not the last valid day: when `review_after <= as_of`, build or runtime derives an effective `stale` state and blocks undisclosed default use without rewriting the source file. A card file may explicitly carry `status: stale` only through a reviewed change and with a non-empty `status_note` explaining why freshness alone is insufficient. Other statuses may carry `status_note` as context but do not require it. Neither a derived nor explicit stale state is silently set or cleared: re-verification updates the evidence and dates, while clearing an explicit override also removes or updates its recorded reason in the reviewed change.
+`review_after` is the first expired day, not the last valid day: when `review_after <= as_of`, build or runtime derives an effective `stale` state and blocks undisclosed default use without rewriting the source file. A card file never carries `status: stale`, and `status_note` is not an override. If a person finds unresolved uncertainty, the card-file status becomes `needs-decision`; if a reviewed change confirms that the card is invalid, it becomes `deprecated` with retirement records. Re-verification clears derived staleness by updating the evidence and freshness dates.
 
 Status is a ranking and disclosure signal, not a permission. A non-certified card may still be the best available knowledge; it is shown with its state, not hidden.
 

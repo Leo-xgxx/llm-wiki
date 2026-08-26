@@ -32,7 +32,7 @@
     "title": {"type": "string", "minLength": 1},
     "summary": {"type": "string", "minLength": 1, "maxLength": 300},
     "status": {
-      "enum": ["draft", "review", "needs-decision", "certified", "deprecated", "stale"]
+      "enum": ["draft", "review", "needs-decision", "certified", "deprecated"]
     },
     "status_note": {
       "type": "string",
@@ -343,10 +343,6 @@
           }
         }
       }
-    },
-    {
-      "if": {"properties": {"status": {"const": "stale"}}, "required": ["status"]},
-      "then": {"required": ["status_note"]}
     },
     {
       "if": {"properties": {"status": {"const": "deprecated"}}, "required": ["status"]},

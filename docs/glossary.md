@@ -16,7 +16,8 @@
 | execution contract | the machine-executed constraints on a metric, dataset or dashboard card |
 | fail closed | unresolved states stay visible; the runtime never converts them into a plausible answer |
 | framing | a view's own restriction on what it shows; kept in `by_layer`, never in the definition |
-| freshness runner | derives effective `stale` when `review_after <= as_of`; an explicit status in a card file is a separate reviewed state with `status_note` |
+| fixture_as_of | reproducible validation date declared by a domain fixture; overridden by CLI `--as-of`, and used before falling back to today |
+| freshness runner | the only component that derives effective `stale` when `review_after <= as_of`; it never rewrites the card-file status |
 | gap | a lead registered by the runtime or a person; never a card by itself |
 | gate | a pass/fail condition on a change; several gates are never collapsed into one |
 | golden question | an end-to-end answer expectation with ground-truth provenance |
@@ -35,7 +36,7 @@
 | retirement | the block on a deprecated card: outcome, reason, date, target |
 | ruling | the content of an arbitration |
 | source card | the evidence bridge from a managed snapshot to the cards it supports |
-| stale | effective status when the review window expired, or a reviewed explicit override with a reason; disclosed, never hidden or silently cleared |
+| stale | runner-derived effective status when the review window expired; disclosed, never written into a card file |
 | structure before body | the edit order: contract, handbook, bridges, evals, then prose |
 | three locks | eligibility script, machine-readable verdict for the revision, pinned revision under a lock |
 | tombstone | an append-only record of a retired card in `retirements.jsonl` |

@@ -42,13 +42,13 @@ A change that touches an official area is routed to its owner role automatically
 | `draft`, `review`, `needs-decision` | authors and machines |
 | `certified` | the certification gate: evidence rule satisfied, maintainer role named, reviewed |
 | `deprecated` | a reviewed change with a retirement block and a tombstone |
-| effective `stale` | derived when `review_after <= as_of`; an explicit status in a card file is allowed only by a reviewed change with `status_note` |
+| effective `stale` | the freshness runner only, when `review_after <= as_of`; never written as a card-file status |
 
-Certification is a signed obligation: the maintainer role commits to re-verification before `review_after`. That date is the first expired day, so `review_after <= as_of` derives effective `stale`. A repository-wide review window (for example sixty to one hundred and eighty days) is set in governance, and the runner enforces it.
+Certification is a signed obligation: the maintainer role commits to re-verification before `review_after`. That date is the first expired day, so `review_after <= as_of` makes the freshness runner derive effective `stale`. A repository-wide review window (for example sixty to one hundred and eighty days) is set in governance, and the runner enforces it.
 
-The validation `as_of` date is also a reproducibility boundary: provenance captures, arbitration rulings, retirements, deletions, redirect start dates, measured golden answers, and gap registrations cannot come from its future. Fixed example runs use the fixture date; releases additionally run with the actual release date.
+The validation `as_of` date is also a reproducibility boundary: provenance captures, arbitration rulings, retirements, deletions, redirect start dates, measured golden answers, and gap registrations cannot come from its future. It resolves in this order: an explicit CLI `--as-of` override, the domain's `fixture_as_of`, then today. Fixture runs use the declared date; releases must explicitly pass their actual release date.
 
-Derived staleness does not rewrite the card. Explicit staleness is never set or cleared just to make a gate green: re-verification updates evidence and dates, and a reviewed change updates or removes the recorded reason.
+Derived staleness does not rewrite the card, and card files never set `status: stale`. A person who finds unresolved uncertainty uses `needs-decision`; a reviewed change that confirms invalidity uses `deprecated` with the retirement records. Re-verification clears derived staleness by updating evidence and freshness dates.
 
 ## Change review
 

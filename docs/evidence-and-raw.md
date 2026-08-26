@@ -38,7 +38,7 @@ artifact:
   sha256: <64 lowercase hexadecimal characters>
 ```
 
-The path is relative to the domain root, must name a non-empty UTF-8 Markdown file directly under `raw/snapshots/`, cannot escape it, and resolves to a regular managed file. The hash covers that file's bytes. A source card that references this contract must repeat the same capture date and trust in `snapshot.captured_on` and `snapshot.trust`; a mismatch is a failed evidence bridge, not a warning.
+The path names a non-empty UTF-8 Markdown snapshot managed under the domain's `raw/snapshots/`; the hash covers that file's bytes. A source card that references this contract must repeat the same capture date and trust in `snapshot.captured_on` and `snapshot.trust`; a mismatch is a failed evidence bridge, not a warning.
 
 ## Standard raw layout
 
@@ -50,7 +50,7 @@ raw/
   schemas/<slug>/            interface schemas
 ```
 
-One stable artifact path per source, kept thin. Each path belongs to exactly one `document-snapshot` contract, and every file under `raw/snapshots/` must be registered; orphan, nested, linked, and non-regular files fail validation. No versions side by side: a re-capture replaces the file, updates its SHA-256, and bumps `captured_on`; the changelog records what changed.
+One stable artifact path per source, kept thin. Each path belongs to exactly one `document-snapshot` contract, and every managed snapshot under `raw/snapshots/` must be registered. No versions side by side: a re-capture replaces the file, updates its SHA-256, and bumps `captured_on`; the changelog records what changed.
 
 ## Lineage policy
 

@@ -50,7 +50,7 @@ Reject changes with missing required fields, duplicate ids, invalid statuses, br
 
 Compile source cards into immutable runtime artifacts in the fixed build order (index → handbook projections → build → distributed pack). Store source and artifact hashes so the runtime can prove that its indexes and cards belong to the same release.
 
-The manifest contract includes at least the card id, source path, type, title, lifecycle state, knowledge role, compiled layer, effective status after freshness and source-content hash. Checked-in example manifests are named as expected-output fixtures; production manifests are generated outside Git. `--write-manifest` is opt-in and writes only after validation has no errors: it rejects unsafe targets, writes a temporary file in the target directory, and atomically replaces the reviewed fixture. An error leaves the prior fixture untouched.
+The manifest contract includes at least the card id, source path, type, title, lifecycle state, knowledge role, compiled layer, effective status after freshness and source-content hash. Checked-in example manifests are named as expected-output fixtures; production manifests are generated outside Git. Updating reviewed expected-output fixtures is opt-in. Validation errors prevent every requested update. Targets are then updated independently in order; a failed target keeps its prior fixture and stops later updates.
 
 ## 6. Ranking and runtime impact check
 

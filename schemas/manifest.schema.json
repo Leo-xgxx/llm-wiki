@@ -11,10 +11,10 @@
     "path": {"type": "string", "minLength": 1, "description": "Relative to the domain root, forward slashes."},
     "type": {"type": "string", "minLength": 1},
     "title": {"type": "string", "minLength": 1},
-    "status": {"type": "string", "minLength": 1},
+    "status": {"enum": ["draft", "review", "needs-decision", "certified", "deprecated"], "description": "Lifecycle status declared in the source card; stale is derived, never declared."},
     "knowledge_role": {"type": "string", "minLength": 1},
     "layer": {"enum": ["direct", "guided", "knowledge"], "description": "Compiled answer layer, derived from the card, never hand-set."},
-    "effective_status": {"type": "string", "minLength": 1, "description": "Status after applying the freshness policy at build time."},
+    "effective_status": {"enum": ["draft", "review", "needs-decision", "certified", "deprecated", "stale"], "description": "Status after applying the freshness policy at build time."},
     "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$", "description": "SHA-256 over the card's UTF-8 bytes with LF line endings, including the final newline."}
   }
 }

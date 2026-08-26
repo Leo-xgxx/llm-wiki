@@ -72,7 +72,7 @@ Each of these was done at least once and cost more to undo than to avoid.
 8. **Adding a guessed interface to make a metric `direct`.** The layer count improves; the answers are invented.
 9. **Combining partial interfaces to make a metric `direct`.** No single adapter can execute the complete contract; one active available bridge must expose every required field itself.
 10. **Certifying on a raw source reference.** A link to a document is not a decision. Certification needs a technical item and a semantic decision.
-11. **Setting or clearing `stale` without a reason.** Freshness normally derives the effective state; an explicit source override needs a reviewed `status_note`, and re-verification must update the evidence and dates before clearing it.
+11. **Writing `stale` into a card file.** Effective staleness belongs to the freshness runner. Human uncertainty is `needs-decision`; confirmed invalidity is `deprecated`; re-verification updates the evidence and freshness dates.
 12. **Annotating instead of deleting.** "Note: this may be outdated, see also …" is a debt with interest. Delete and repoint.
 13. **Bulk edits without a machine criterion.** Forty cards changed by pattern, three of them wrong, nobody can say which.
 14. **Committing generated artifacts and then hand-fixing them.** The next build reverts the fix and the hash check fails in a place nobody is looking.

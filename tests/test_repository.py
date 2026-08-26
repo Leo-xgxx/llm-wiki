@@ -78,6 +78,33 @@ class RepositoryContractTests(unittest.TestCase):
         })
         self.assertTrue(list(validator.iter_errors(row)))
 
+    def test_stale_is_derived_only_in_manifest_effective_status(self) -> None:
+        card_schema = load_json(SCHEMA_DIR / "card.schema.json")
+        card_status_validator = jsonschema.Draft202012Validator(card_schema["properties"]["status"])
+        self.assertTrue(list(card_status_validator.iter_errors("stale")))
+
+        manifest_schema = load_json(SCHEMA_DIR / "manifest.schema.json")
+        manifest_validator = jsonschema.Draft202012Validator(manifest_schema)
+        row = copy.deepcopy(load_jsonl(EXAMPLE / "evals" / "manifest.expected.jsonl")[0])
+        row["effective_status"] = "stale"
+        self.assertEqual(list(manifest_validator.iter_errors(row)), [])
+
+        row["status"] = "stale"
+        self.assertTrue(list(manifest_validator.iter_errors(row)))
+
+    def test_golden_fixture_covers_quarantined_live_tolerance_contract(self) -> None:
+        rows = load_jsonl(EXAMPLE / "evals" / "golden.jsonl")
+        matches = [
+            row
+            for row in rows
+            if row.get("ground_truth_type") == "measured_live"
+            and row.get("scoring_method") == "tolerance"
+            and row.get("status") == "quarantine"
+            and row.get("layer") == "volatile"
+        ]
+        self.assertEqual(len(matches), 1)
+        self.assertIsInstance(matches[0]["expected"], (int, float))
+
     def test_verified_live_gap_claim_requires_evidence_reference(self) -> None:
         schema = load_json(SCHEMA_DIR / "gap.schema.json")
         validator = jsonschema.Draft202012Validator(schema)

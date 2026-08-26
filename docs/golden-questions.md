@@ -28,6 +28,8 @@ Every record in `evals/golden.jsonl` (schema: [golden-question.schema.json](../s
 
 `must_disclose` and `must_not` are disjoint after case and whitespace normalization. A measured record cannot be dated after the validation `as_of` date, and multiple old ids in one field may not collapse through redirects to the same active card.
 
+The synthetic example keeps the current live-measurement request as an availability-boundary refusal because its adapter is unavailable. Separately, a historical fully synthetic numeric checkpoint exercises `ground_truth_type: measured_live`, `scoring_method: tolerance`, a numeric `expected`, `status: quarantine`, and `layer: volatile`. The checkpoint demonstrates the record contract without claiming that this repository has live data access.
+
 ## Refusal is an answer
 
 Categories `refusal` and `boundary` exist so that "this domain does not cover cash collection" and "the adapter is unavailable; here is the procedure" are scored as **correct**. A set where every expected answer is a value trains the system to invent values.

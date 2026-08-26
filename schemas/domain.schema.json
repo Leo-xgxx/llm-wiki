@@ -11,6 +11,7 @@
     "title": {"type": "string", "minLength": 1},
     "description": {"type": "string", "minLength": 1},
     "status": {"enum": ["incubating", "active", "frozen", "retired"]},
+    "fixture_as_of": {"type": "string", "format": "date", "description": "Optional reproducibility date for a reviewed fixture; an explicit CLI date overrides it."},
     "owner_role": {"type": "string", "minLength": 1, "description": "A role name, never a person."},
     "source_registry": {"type": "string", "minLength": 1},
     "handbook": {"type": "string", "minLength": 1, "description": "First-read rules for this domain. Read before any card."},

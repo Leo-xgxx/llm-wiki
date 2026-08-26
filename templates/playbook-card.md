@@ -4,8 +4,8 @@ type: playbook
 domain: <domain>
 title: <title>
 summary: <what question shape this procedure answers>
-status: draft
-# status_note: <required when status is stale; optional otherwise>
+status: draft             # draft | review | needs-decision | certified | deprecated; never stale
+# status_note: <optional context for the chosen lifecycle status>
 knowledge_role: canonical
 maintainer: <role>
 aliases: []

@@ -18,7 +18,7 @@ A domain is the unit of ownership, routing and review. Its layout is fixed so th
 
 ```text
 <domain>/
-  domain.yaml            identity, registry pointer, handbook pointer, boundaries, routing hints
+  domain.yaml            identity, registry pointer, handbook pointer, boundaries, routing hints, fixture validation date
   AGENTS.md              domain handbook: first-read hard rules; read before any card
   raw/                   managed evidence snapshots + source-contracts.yaml (the registry)
   wiki/<type>/*.md       cards, one directory per card type
@@ -76,7 +76,7 @@ Build products are disposable and never edited by hand. A clean checkout must re
 
 Build order matters when one product is the input of another. The reference order is: regenerate the retrieval index (aliases and briefs) → regenerate handbook projections → compile the build → package any distributed skill. Running a later step before an earlier one produces drift that looks like a content bug.
 
-Small files named `*.expected.jsonl` under an example's `evals/` directory are reviewed fixtures for the build contract, not runtime build products. `source_sha256` means SHA-256 over the source card's UTF-8 bytes with LF line endings, including the final newline; a build normalizes or rejects other line endings before hashing. The reference validator writes an expected manifest only after all checks pass, using a safe same-directory temporary file and atomic replacement; an error or unsafe target leaves the existing fixture unchanged.
+Small files named `*.expected.jsonl` under an example's `evals/` directory are reviewed fixtures for the build contract, not runtime build products. `source_sha256` means SHA-256 over the source card's UTF-8 bytes with LF line endings, including the final newline; a build normalizes or rejects other line endings before hashing. Validation errors prevent every requested manifest update. Targets are then updated independently in order; a failed target keeps its existing fixture and stops later updates.
 
 ## Consumption outlets
 

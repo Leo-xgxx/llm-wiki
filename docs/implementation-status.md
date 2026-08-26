@@ -8,7 +8,7 @@ What in this design has been run in earnest, what has only been designed, and wh
 | card model | execution contract (`required_fields`, `always_filter`, `by_layer`, `time_default`) with single-interface coverage | **in use** |
 | card model | consistency cards as alias arbiters; build error without one | **in use** |
 | card model | brief compiled from the first section with a hard limit | **in use** |
-| card model | effective `stale` derived from freshness; explicit override requires a reviewed reason; certification as re-verification obligation | **in use** |
+| card model | effective `stale` derived only by the freshness runner; certification as re-verification obligation | **in use** |
 | evidence | registry with provenance; KEEP/DELETE; source cards | **in use**; a second clean-up pass of process artefacts was still pending |
 | build | deterministic manifest with hashes; fixed build order; artifacts outside Git | **in use** |
 | build | three compiled layers and domain capsules | **in use** |

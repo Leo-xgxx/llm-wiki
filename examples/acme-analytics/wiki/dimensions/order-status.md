@@ -50,7 +50,7 @@ freshness:
 ## Definition
 
 - `order_status` has a closed value domain of three values; only `completed` is recognized.
-- The list comes from the interface contract, not from observing data; if a new value appears, the interface contract changed and this card is stale.
+- The list comes from the interface contract, not from observing data. If a new value appears, set this card to `needs-decision` and re-verify the contract; deprecate or replace the card only after review confirms the definition is invalid.
 
 ## Value domain
 
