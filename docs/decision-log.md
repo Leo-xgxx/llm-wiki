@@ -31,6 +31,7 @@ Decisions that shaped this design, in the order they were made, including the on
 | 2026-08 | Plain-language naming; metaphoric mechanism names retired | in-group jargon | new readers could not tell what a mechanism did from its name |
 | 2026-08 | Generated artifacts leave Git except the id index and reviewed fixtures | committing build outputs | committed outputs drifted and were hand-edited; the build hash check now runs on a clean checkout |
 | 2026-08 | This repository is a clean-room design record: no code, prompts, history or examples copied from any deployment | a public mirror with scrubbing | scrubbing is a losing game; re-deriving generically is safer and produces better documentation |
+| 2026-08 | Generated-artifact Git exceptions narrowed to reviewed `*.expected.jsonl` fixtures only; the domain id index leaves Git | keeping the id index in Git alongside fixtures | ids are already the source of truth in card frontmatter and the manifest fixture; a separate index duplicated references and drifted |
 
 ## Deferred, deliberately
 

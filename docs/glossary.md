@@ -44,3 +44,30 @@
 | value domain | the sourced list of a field's values and their meanings |
 | warden | the failure-driven supervisor of scheduled machine roles |
 | watermark | the first-line hash plus processed-line count a watcher uses to read new gap records |
+
+## Machine roles in the self-maintenance loop
+
+| Role | Job |
+|---|---|
+| sentinel | runs detectors and turns findings into gap records |
+| fixer (knowledge) | edits cards on a machine branch and opens a machine MR |
+| fixer (runtime) | same for runtime code |
+| reviewer | grades a machine MR at each revision and writes the machine-readable verdict line |
+| operator | drains the ticket queue, assigns work, opens releases |
+| warden | watches for failed or missing scheduled runs and escalates |
+
+People hold **owner** (semantic decisions, certification) and **release approver** (optional human step before production).
+
+## Classification mapping
+
+Different documents name the same failure at different layers. Use this table; do not invent a fourth vocabulary.
+
+| gap `kind` | ticket classification (self-maintenance) | intake / feedback classification | Notes |
+|---|---|---|---|
+| `coverage-gap` | missing knowledge | new knowledge / missing knowledge | no authoritative source → repeated demand, source missing |
+| `wrong-answer` | wrong definition | correction / wrong definition | wrong-answer door when a certified card was applied |
+| `ranking-miss` | ranking | routing gap / bad ranking | stays a lead unless owner-confirmed or wrong-answer door applies |
+| `template-failure` | transient (adapter/build surface) | template failure | stays a lead; fix is build-side, not a card edit |
+| `unavailable-interface` | adapter | unavailable live data | stays a lead unless owner-confirmed |
+| `transient` | transient | transient incident / temporary incident | runtime record; never a card |
+| narrated claim (any kind) | — | lead | may become a ticket only through the three-way gate; never card content |

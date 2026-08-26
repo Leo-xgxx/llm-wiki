@@ -39,6 +39,7 @@ source_refs:
 relations:
   depends_on:
     - acme-analytics.concept.recognition-date
+    - acme-analytics.dimension.order-status
   related:
     - acme-analytics.metric.net-revenue
   supersedes: []

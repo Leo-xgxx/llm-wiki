@@ -30,6 +30,8 @@ A gap becomes a ticket only through one of three doors. The gate filters both fa
 
 Everything else stays a lead in the gap file, visible in statistics, and never becomes a ticket.
 
+Gap kinds such as `ranking-miss`, `template-failure`, and `unavailable-interface` follow the same rule: they remain leads unless one of the three doors applies. They feed statistics and detector reports; they do not bypass eligibility.
+
 ## Ticket lifecycle
 
 `registered → eligible → assigned → in-fix → in-review → re-fix → merged | rejected | parked`
@@ -76,6 +78,8 @@ All three must hold on the same revision:
 3. **The revision is pinned** at merge time under a lock, so a push between review and merge invalidates the merge.
 
 Merge is its own step, executed by one script that takes the lock, re-checks the three conditions, and merges. Nothing else merges.
+
+Expect most definition changes to touch an official area (handbook, consistency cards, execution contracts) and therefore require an owner review even when the gates are green. Auto-merge is intended for fixes that stay outside those areas.
 
 ## Warden: failure-driven supervision
 
