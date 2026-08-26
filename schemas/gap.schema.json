@@ -34,7 +34,7 @@
         "required": ["text", "confidence"],
         "properties": {
           "text": {"type": "string", "minLength": 1, "pattern": "\\S"},
-          "confidence": {"enum": ["user_confirmed", "verified_live", "narrated"], "description": "narrated: said in conversation and unverified; it may justify a ticket but never a card."},
+          "confidence": {"enum": ["user_confirmed", "verified_live", "narrated"], "description": "narrated: said in conversation and unverified; it becomes a lead and may become a ticket only through the three-way eligibility gate; it never produces a card."},
           "evidence_ref": {"type": "string", "minLength": 1}
         },
         "allOf": [

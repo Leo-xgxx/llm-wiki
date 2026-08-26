@@ -60,7 +60,7 @@ Whenever the answer did not come from certified knowledge — no card, wrong car
 - `answered` is mandatory so that "answered wrongly" and "could not answer" are never merged;
 - `kind` distinguishes coverage gap from template failure; the two are mutually exclusive;
 - `searched` is non-empty and lists which surfaces were tried and what they returned, so a ranking miss is distinguishable from missing knowledge;
-- `claims` carry the confidence level; every `verified_live` claim names authoritative technical registry evidence captured in `live` state no later than the gap, while `narrated` claims may open a ticket and never a card;
+- `claims` carry the confidence level; every `verified_live` claim names authoritative technical registry evidence captured in `live` state no later than the gap, while `narrated` claims become leads and may become tickets only through the three-way eligibility gate in [self-maintenance-loop.md](self-maintenance-loop.md); they never produce a card;
 - the requester is not in the record; the host keeps that mapping if it needs it.
 
 A person can also register a lead ("I heard that X is computed as Y") through the same record with `registered_by: person`. Registering is deliberately cheap and deliberately never produces a card by itself; the loop in [self-maintenance-loop.md](self-maintenance-loop.md) decides what happens next.
