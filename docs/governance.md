@@ -60,7 +60,7 @@ Merging is always a separate step from reviewing: read the full review, confirm 
 
 Generated runtime files stay outside Git and are never edited directly. A clean checkout rebuilds them from source cards to identical hashes. Drift means the source, the compiler or the committed policy is inconsistent.
 
-Two generated exceptions are allowed to live in Git, both reviewed: the domain's id index (because ids are the source of truth for references) and the small `*.expected.jsonl` fixtures under `examples/**/evals/`. Separately, `examples/**/gaps.example.jsonl` may be tracked as fully synthetic schema and cross-reference test data; operational gap files remain outside Git.
+The only reviewed generated exceptions allowed in Git are the small `*.expected.jsonl` fixtures under `examples/**/evals/`. Separately, `examples/**/gaps.example.jsonl` may be tracked as fully synthetic schema and cross-reference test data; operational gap files remain outside Git.
 
 ## Runtime isolation
 

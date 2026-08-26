@@ -1,6 +1,8 @@
 # Acme Analytics example
 
-A synthetic domain that exercises every contract in this repository without representing any real organization or data source.
+A synthetic domain that covers every card type and the main lifecycle paths in this repository without representing any real organization or data source.
+
+Deliberately not demonstrated here: `draft` and `review` statuses, a committed `direct` compiled layer (the fictional adapter stays unavailable), retirement outcome `retired` without a replacement target, every trap kind and evidence kind enum, and every gap kind enum.
 
 ## What it contains
 

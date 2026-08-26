@@ -13,10 +13,10 @@ What in this design has been run in earnest, what has only been designed, and wh
 | build | deterministic manifest with hashes; fixed build order; artifacts outside Git | **in use** |
 | build | three compiled layers and domain capsules | **in use** |
 | build | distributed pack with validity window | **in use** |
-| gates | frontmatter lint, cross-record validation, routing evals, rank regression, runtime impact, review three questions, freshness runner | **in use** |
+| gates | schema, graph, build, retrieval, rank regression, planning, answer, freshness | **in use**; the reference validator covers schema, graph and build fixtures only; retrieval, planning, answer scoring and freshness remain separate runtime gates |
 | gates | golden questions with the full taxonomy | **in use**; the log-sourced share was still small |
 | runtime | trust the model / feed facts / fail closed; salvage removed | **in use** |
-| runtime | gap registration contract (schema version 2) | **designed**; version 1 in use, version 2 the target |
+| runtime | gap registration contract (schema version 2) | **in use** in this repository's schema and synthetic fixture; external deployments may still carry older runtime sinks until migrated |
 | runtime | conversation-side lead registration replacing the distillation pipeline | **designed, not built**; the old pipeline still ran |
 | intake | two input chains; seven probe questions; proposals area | **in use** |
 | mining | nine-step domain mining; source-type tactics | **in use** for several domains |

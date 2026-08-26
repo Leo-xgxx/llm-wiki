@@ -4,7 +4,8 @@ type: dimension
 domain: acme-analytics
 title: Order status
 summary: Value domain of the order_status field and which values count as recognized.
-status: certified
+status: needs-decision
+status_note: The interface contract now lists on_hold; whether it counts as recognized revenue is undecided.
 knowledge_role: canonical
 maintainer: demo-maintainer
 aliases:
@@ -23,6 +24,8 @@ value_domain:
       meaning: paid and fulfilled; the only state that counts as recognized
     - value: pending
       meaning: created but not yet paid or fulfilled
+    - value: on_hold
+      meaning: payment authorized but not yet fulfilled; recognition rule pending owner decision
     - value: cancelled
       meaning: closed without fulfilment; never recognized
       deprecated: false
@@ -32,25 +35,23 @@ relations:
   depends_on: []
   related:
     - acme-analytics.metric.net-revenue
+    - acme-analytics.metric.gross-revenue
   supersedes: []
 evidence:
   - kind: interface-contract
     ref: acme-analytics.synthetic.orders-v1
-    checked_at: "2026-08-25"
-  - kind: semantic-decision
-    ref: acme-analytics.synthetic.net-revenue-v1
-    checked_at: "2026-08-25"
+    checked_at: "2026-08-26"
 freshness:
-  last_verified: "2026-08-25"
-  review_after: "2027-02-25"
+  last_verified: "2026-08-26"
+  review_after: "2027-02-26"
 ---
 
 # Order status
 
 ## Definition
 
-- `order_status` has a closed value domain of three values; only `completed` is recognized.
-- The list comes from the interface contract, not from observing data. If a new value appears, set this card to `needs-decision` and re-verify the contract; deprecate or replace the card only after review confirms the definition is invalid.
+- `order_status` has a closed value domain of four values in the interface contract; only `completed` is recognized today.
+- The list comes from the interface contract, not from observing data. The new `on_hold` value appeared in the contract on 2026-08-26; this card is `needs-decision` until an owner rules whether it counts as recognized.
 
 ## Value domain
 
@@ -58,13 +59,15 @@ freshness:
 |---|---|---|
 | completed | paid and fulfilled | yes |
 | pending | created, not yet paid or fulfilled | no |
+| on_hold | payment authorized, not yet fulfilled | undecided |
 | cancelled | closed without fulfilment | no |
 
 ## Common mistakes
 
 - Filtering `order_status != 'cancelled'` includes pending orders and overstates revenue.
 - Treating the current status as historical: an order that was pending yesterday and completed today counts today.
+- Applying a filter for `on_hold` before the owner decision is recorded.
 
 ## Caveats
 
-Synthetic example only.
+Synthetic example only. Do not treat `on_hold` as recognized or excluded until the semantic decision is recorded.
